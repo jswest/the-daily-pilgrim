@@ -1,0 +1,44 @@
+{
+	"name": "the-daily-pilgrim",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"process:status": "node scripts/process-images.js status",
+		"process:all": "node scripts/process-images.js process",
+		"process:reset": "node scripts/process-images.js reset",
+		"process:worker": "node scripts/process-images.js worker",
+		"pdf2:list": "node scripts/generate-pdf-v2.js list",
+		"pdf2:generate": "node scripts/generate-pdf-v2.js generate",
+		"pdf2:issue": "node scripts/generate-pdf-v2.js issue",
+		"pdf2:date": "node scripts/generate-pdf-v2.js date",
+		"pdf2:preview": "node scripts/generate-pdf-v2.js preview",
+		"pdf2:info": "node scripts/generate-pdf-v2.js info",
+		"pdf2:test": "node scripts/generate-pdf-v2.js test-url",
+		"pdf2:all": "node scripts/generate-pdf-v2.js all",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-auto": "^6.0.0",
+		"@sveltejs/kit": "^2.22.0",
+		"@sveltejs/vite-plugin-svelte": "^6.0.0",
+		"drizzle-kit": "^0.31.4",
+		"svelte": "^5.0.0",
+		"vite": "^7.0.4"
+	},
+	"dependencies": {
+		"better-sqlite3": "^12.2.0",
+		"dotenv": "^17.2.2",
+		"drizzle-orm": "^0.44.5",
+		"marked": "^16.3.0",
+		"puppeteer": "^24.22.0",
+		"sharp": "^0.34.4"
+	}
+}
