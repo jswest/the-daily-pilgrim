@@ -1,6 +1,12 @@
 <script>
   import { onMount } from "svelte";
   import Header from "$lib/components/Header.svelte";
+  import Button from "$lib/components/base/Button.svelte";
+  import LoadingState from "$lib/components/base/LoadingState.svelte";
+  import EmptyState from "$lib/components/base/EmptyState.svelte";
+  import PageContainer from "$lib/components/base/PageContainer.svelte";
+  import CardGrid from "$lib/components/base/CardGrid.svelte";
+  import Card from "$lib/components/base/Card.svelte";
 
   let articles = $state([]);
   let isLoading = $state(false);
@@ -36,9 +42,9 @@
   ]}
 />
 
-<div class="main-content">
+<PageContainer>
   <div class="page-actions">
-    <a href="/articles/create" class="btn btn-primary">Create Article</a>
+    <Button variant="primary" href="/articles/create">Create Article</Button>
   </div>
 
   {#if message}
@@ -48,21 +54,22 @@
   {/if}
 
   {#if isLoading}
-    <div class="loading">Loading articles...</div>
+    <LoadingState message="Loading articles..." />
   {:else if articles.length === 0}
-    <div class="empty-state">
-      <p>No articles found.</p>
-      <a href="/articles/create" class="btn btn-primary">Create the first article</a>
-    </div>
+    <EmptyState
+      message="No articles found."
+      actionText="Create the first article"
+      actionHref="/articles/create"
+    />
   {:else}
-    <div class="card-grid">
+    <CardGrid>
       {#each articles as article}
-        <article class="card">
+        <Card>
           <h2>{article.hed}</h2>
           {#if article.dek}
             <p class="dek">{article.dek}</p>
           {/if}
-          
+
           <div class="body-preview">
             {article.body.length > 150
               ? article.body.substring(0, 150) + "..."
@@ -75,137 +82,22 @@
               <span>{article.authors}</span>
             </div>
           {/if}
-          
+
           <div class="meta">
-            Created {new Date(article.created_at).toLocaleDateString()}
+            Created {new Date(article.createdAt).toLocaleDateString()}
           </div>
 
           <div class="card-actions">
-            <a href="/articles/{article.id}" class="btn btn-primary">View</a>
-            <a href="/articles/{article.id}/edit" class="btn btn-secondary">Edit</a>
+            <Button variant="primary" href="/articles/{article.id}">View</Button>
+            <Button variant="secondary" href="/articles/{article.id}/edit">Edit</Button>
           </div>
-        </article>
+        </Card>
       {/each}
-    </div>
+    </CardGrid>
   {/if}
-</div>
+</PageContainer>
 
 <style>
-  :global(:root) {
-    --color-bg: #ffffff;
-    --color-fg: #000000;
-    --color-off: #0066cc;
-    --color-warn: #cc6600;
-    --font-body: "Cormorant";
-    --font-dek: "Merriweather";
-    --font-hed: "Merriweather";
-    --font-masthead: "Bodoni Moda";
-    --unit: 16px;
-  }
-
-  .hero {
-    background-color: var(--color-fg);
-    color: var(--color-bg);
-    text-align: center;
-    margin-bottom: calc(var(--unit) * 3);
-    padding: var(--unit);
-  }
-  
-  .hero h1 {
-    font-family: var(--font-masthead);
-    font-size: calc(var(--unit) * 2);
-    font-weight: 600;
-    line-height: 1;
-    margin: 0 0 var(--unit) 0;
-    text-transform: uppercase;
-    transform-origin: 50% 50%;
-    transform: scaleY(75%);
-  }
-  
-  .hero p {
-    font-family: var(--font-hed);
-    font-size: var(--unit);
-    font-weight: 900;
-    margin: 0;
-  }
-
-  .main-content {
-    margin: 0 auto;
-    max-width: 1200px;
-    padding: var(--unit);
-  }
-
-  .page-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-bottom: calc(var(--unit) * 2);
-  }
-
-  .breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: calc(var(--unit) * 0.5);
-    font-family: var(--font-body);
-    color: var(--color-fg);
-  }
-
-  .breadcrumb a {
-    color: var(--color-off);
-    text-decoration: none;
-  }
-
-  .breadcrumb a:hover {
-    text-decoration: underline;
-  }
-
-  .alert {
-    background-color: var(--color-warn);
-    color: var(--color-bg);
-    padding: var(--unit);
-    margin-bottom: calc(var(--unit) * 2);
-    text-align: center;
-  }
-
-  .loading {
-    text-align: center;
-    padding: calc(var(--unit) * 2);
-    font-family: var(--font-body);
-    color: var(--color-fg);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: calc(var(--unit) * 3);
-    font-family: var(--font-body);
-    color: var(--color-fg);
-  }
-
-  .empty-state p {
-    margin-bottom: var(--unit);
-    font-size: calc(var(--unit) * 1.125);
-  }
-
-  .card-grid {
-    display: grid;
-    gap: 2rem;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
-
-  .card {
-    background-color: white;
-    border: 1px solid var(--color-fg);
-    padding: var(--unit);
-  }
-
-  .card h2 {
-    font-family: var(--font-hed);
-    font-size: calc(var(--unit) * 1.125);
-    font-weight: 900;
-    line-height: 1;
-    margin: 0 0 calc(var(--unit) * 0.5) 0;
-  }
-
   .dek {
     font-family: var(--font-dek);
     font-style: italic;
@@ -235,43 +127,5 @@
     font-size: calc(var(--unit) * 0.875);
     opacity: 0.6;
     margin: 0 0 calc(var(--unit) * 1.5) 0;
-  }
-
-  .card-actions {
-    display: flex;
-    gap: var(--unit);
-    flex-wrap: wrap;
-  }
-
-  .btn {
-    border: none;
-    border-radius: 0;
-    box-sizing: border-box;
-    cursor: pointer;
-    display: inline-block;
-    font-family: var(--font-hed);
-    font-size: var(--unit);
-    font-weight: 400;
-    line-height: 1;
-    opacity: 0.5;
-    padding: calc(var(--unit) * 0.5);
-    text-decoration: none;
-    transition: opacity 0.2s;
-    text-align: center;
-  }
-  
-  .btn:hover {
-    opacity: 1;
-  }
-
-  .btn-primary {
-    background-color: var(--color-off);
-    color: var(--color-bg);
-  }
-
-  .btn-secondary {
-    background: var(--color-bg);
-    border: 1px solid var(--color-fg);
-    color: var(--color-fg);
   }
 </style>

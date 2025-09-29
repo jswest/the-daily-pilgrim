@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { ChromiumPDFGenerator } from '../src/lib/pdf/chromium-generator.js';
-import { EditionModel } from '../src/lib/db/models/editions.js';
-import { initializeDatabase } from '../src/lib/db/connection.js';
+import { getDatabase } from '../src/lib/db/connection.js';
+import { editions } from '../src/lib/db/schema.js';
 import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
@@ -19,7 +19,7 @@ async function main() {
     const command = args[0];
 
     try {
-        initializeDatabase();
+        const db = getDatabase();
         const generator = new ChromiumPDFGenerator({
             pageWidthMM: 90,
             pageHeightMM: 160,
@@ -28,16 +28,17 @@ async function main() {
             viewportH: 640,
             waitForLoad: 3000
         });
-        const editionModel = new EditionModel();
 
         switch (command) {
             case 'list':
                 console.log('Available Editions:');
-                const editions = await editionModel.getAll();
-                if (editions.length === 0) {
+                const allEditions = await db.query.editions.findMany({
+                    orderBy: (editions, { desc }) => [desc(editions.publishedAt)]
+                });
+                if (allEditions.length === 0) {
                     console.log('No editions found.');
                 } else {
-                    editions.forEach(edition => {
+                    allEditions.forEach(edition => {
                         const publishedDate = new Date(edition.publishedAt).toLocaleDateString();
                         console.log(`- Issue ${edition.issueNumber} (ID: ${edition.id}) - ${publishedDate}`);
                     });
@@ -52,7 +53,9 @@ async function main() {
                     process.exit(1);
                 }
 
-                const edition = await editionModel.getById(parseInt(editionId));
+                const edition = await db.query.editions.findFirst({
+                    where: (editions, { eq }) => eq(editions.id, parseInt(editionId))
+                });
                 if (!edition) {
                     console.error(`Edition ${editionId} not found.`);
                     process.exit(1);
@@ -139,7 +142,54 @@ async function main() {
                     process.exit(1);
                 }
 
-                const infoEdition = await editionModel.getById(parseInt(infoId));
+                const infoEdition = await db.query.editions.findFirst({
+                    where: (editions, { eq }) => eq(editions.id, parseInt(infoId)),
+                    with: {
+                        coverImage: true,
+                        articles: {
+                            with: {
+                                article: {
+                                    with: {
+                                        authors: {
+                                            with: {
+                                                author: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                            orderBy: (editionArticles, { asc }) => [asc(editionArticles.orderPosition)],
+                        },
+                        poems: {
+                            with: {
+                                poem: {
+                                    with: {
+                                        authors: {
+                                            with: {
+                                                author: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                            orderBy: (editionPoems, { asc }) => [asc(editionPoems.orderPosition)],
+                        },
+                        images: {
+                            with: {
+                                image: {
+                                    with: {
+                                        authors: {
+                                            with: {
+                                                author: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                            orderBy: (editionImages, { asc }) => [asc(editionImages.orderPosition)],
+                        },
+                    },
+                });
                 if (!infoEdition) {
                     console.error(`Edition ${infoId} not found.`);
                     process.exit(1);
@@ -147,23 +197,29 @@ async function main() {
 
                 console.log(`Edition ${infoEdition.id} - Issue ${infoEdition.issueNumber}`);
                 console.log(`Published: ${new Date(infoEdition.publishedAt).toLocaleDateString()}`);
-                console.log(`Cover Image: ${infoEdition.cover_image ? infoEdition.cover_image.filename : 'None'}`);
+                console.log(`Cover Image: ${infoEdition.coverImage ? infoEdition.coverImage.filename : 'None'}`);
                 console.log(`Print URL: ${BASE_URL}/print?issue=${infoEdition.issueNumber}`);
                 console.log('');
                 console.log('Content:');
                 console.log(`  Articles: ${infoEdition.articles?.length || 0}`);
-                infoEdition.articles?.forEach((article, index) => {
-                    console.log(`    ${index + 1}. ${article.hed}${article.authors ? ` (by ${article.authors})` : ''}`);
+                infoEdition.articles?.forEach((editionArticle, index) => {
+                    const article = editionArticle.article;
+                    const authors = article.authors?.map(aa => aa.author.name).join(', ') || '';
+                    console.log(`    ${index + 1}. ${article.hed}${authors ? ` (by ${authors})` : ''}`);
                 });
 
                 console.log(`  Poems: ${infoEdition.poems?.length || 0}`);
-                infoEdition.poems?.forEach((poem, index) => {
-                    console.log(`    ${index + 1}. ${poem.title}${poem.authors ? ` (by ${poem.authors})` : ''}`);
+                infoEdition.poems?.forEach((editionPoem, index) => {
+                    const poem = editionPoem.poem;
+                    const authors = poem.authors?.map(pa => pa.author.name).join(', ') || '';
+                    console.log(`    ${index + 1}. ${poem.title}${authors ? ` (by ${authors})` : ''}`);
                 });
 
                 console.log(`  Images: ${infoEdition.images?.length || 0}`);
-                infoEdition.images?.forEach((image, index) => {
-                    console.log(`    ${index + 1}. ${image.filename} (${image.usage_type})${image.authors ? ` by ${image.authors}` : ''}`);
+                infoEdition.images?.forEach((editionImage, index) => {
+                    const image = editionImage.image;
+                    const authors = image.authors?.map(ia => ia.author.name).join(', ') || '';
+                    console.log(`    ${index + 1}. ${image.filename} (${editionImage.usageType})${authors ? ` by ${authors}` : ''}`);
                 });
                 break;
 
@@ -181,14 +237,16 @@ async function main() {
 
             case 'all':
                 console.log('Generating PDFs for all editions...');
-                const allEditions = await editionModel.getAll();
+                const allEditionsForGeneration = await db.query.editions.findMany({
+                    orderBy: (editions, { desc }) => [desc(editions.publishedAt)]
+                });
 
-                if (allEditions.length === 0) {
+                if (allEditionsForGeneration.length === 0) {
                     console.log('No editions found.');
                     break;
                 }
 
-                for (const edition of allEditions) {
+                for (const edition of allEditionsForGeneration) {
                     try {
                         const filename = `daily-pilgrim-issue-${edition.issueNumber}.pdf`;
                         const outputPath = join(OUTPUT_DIR, filename);

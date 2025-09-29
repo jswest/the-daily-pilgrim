@@ -1,6 +1,10 @@
 <script>
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
+    import Header from '$lib/components/Header.svelte';
+    import Button from '$lib/components/base/Button.svelte';
+    import LoadingState from '$lib/components/base/LoadingState.svelte';
+    import PageContainer from '$lib/components/base/PageContainer.svelte';
 
     let loading = true;
     let saving = false;
@@ -68,7 +72,7 @@
         if (selectedImages.some(img => img.id === imageId)) {
             selectedImages = selectedImages.filter(img => img.id !== imageId);
         } else {
-            selectedImages = [...selectedImages, { id: imageId, usage_type: 'content' }];
+            selectedImages = [...selectedImages, { id: imageId, usageType: 'content' }];
         }
     }
 
@@ -84,24 +88,16 @@
         error = '';
 
         try {
-            const editionData = {
-                issue_number: issueNumber,
-                published_at: publishedAt,
-                cover_image_id: coverImageId
-            };
-
-            const contentItems = {
-                articles: selectedArticles,
-                poems: selectedPoems,
-                images: selectedImages
-            };
-
             const response = await fetch('/api/editions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ editionData, contentItems })
+                body: JSON.stringify({
+                    issueNumber: issueNumber,
+                    publishedAt: publishedAt,
+                    coverImageId: coverImageId
+                })
             });
 
             const result = await response.json();
@@ -125,18 +121,29 @@
     <title>Create Edition - The Daily Pilgrim</title>
 </svelte:head>
 
-<div class="page-header">
-    <h1>Create New Edition</h1>
-    <p>Select content and create a new magazine edition</p>
-</div>
+<Header
+    breadcrumbs={[
+        { href: "/", label: "Home" },
+        { href: "/editions", label: "Editions" },
+        { label: "Create New Edition" }
+    ]}
+/>
 
 {#if loading}
-    <div class="loading">Loading available content...</div>
+    <PageContainer>
+        <LoadingState message="Loading available content..." />
+    </PageContainer>
 {:else}
-    <form on:submit|preventDefault={handleSubmit} class="edition-form">
-        {#if error}
-            <div class="error">{error}</div>
-        {/if}
+    <PageContainer>
+        <div class="edition-header">
+            <h1>Create New Edition</h1>
+            <p>Select content and create a new magazine edition</p>
+        </div>
+
+        <form on:submit|preventDefault={handleSubmit} class="edition-form">
+            {#if error}
+                <div class="alert">{error}</div>
+            {/if}
 
         <div class="form-section">
             <h2>Edition Details</h2>
@@ -187,10 +194,10 @@
                             />
                             <label for="cover-{image.id}" class="cover-label">
                                 <div class="cover-preview">
-                                    <img src="{image.processed_path || image.original_path}" alt="{image.filename}" />
+                                    <img src="/api/images/{image.id}/file" alt="{image.filename}" />
                                     <div class="cover-info">
                                         <div class="cover-filename">{image.filename}</div>
-                                        <div class="cover-type">{image.image_type}</div>
+                                        <div class="cover-type">{image.imageType || 'image'}</div>
                                         {#if image.authors}
                                             <div class="cover-authors">by {image.authors}</div>
                                         {/if}
@@ -273,7 +280,7 @@
                     {#each availableContent.images as image}
                         <div class="content-card" class:selected={selectedImages.some(img => img.id === image.id)}>
                             <div class="image-preview">
-                                <img src="{image.processed_path || image.original_path}" alt="{image.caption || image.filename}" />
+                                <img src="/api/images/{image.id}/file" alt="{image.caption || image.filename}" />
                             </div>
                             <div class="content-header">
                                 <h3>{image.filename}</h3>
@@ -299,61 +306,48 @@
             {/if}
         </div>
 
-        <div class="form-actions">
-            <a href="/editions" class="btn btn-secondary">Cancel</a>
-            <button type="submit" class="btn btn-primary" disabled={saving}>
-                {saving ? 'Creating...' : 'Create Edition'}
-            </button>
-        </div>
-    </form>
+            <div class="form-actions">
+                <Button variant="secondary" href="/editions">Cancel</Button>
+                <button type="submit" class="btn btn-primary" disabled={saving}>
+                    {saving ? 'Creating...' : 'Create Edition'}
+                </button>
+            </div>
+        </form>
+    </PageContainer>
 {/if}
 
 <style>
-    .page-header {
-        background-color: var(--color-fg);
-        color: var(--color-bg);
+    .edition-header {
         text-align: center;
         margin-bottom: calc(var(--unit) * 3);
         padding: calc(var(--unit) * 2);
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
     }
 
-    .page-header h1 {
+    .edition-header h1 {
         font-family: var(--font-hed);
-        font-size: calc(var(--unit) * 1.5);
+        font-size: calc(var(--unit) * 2);
         font-weight: 900;
         margin: 0 0 calc(var(--unit) * 0.5) 0;
+        color: var(--color-fg);
     }
 
-    .page-header p {
+    .edition-header p {
         font-family: var(--font-body);
         margin: 0;
-    }
-
-    .loading {
-        text-align: center;
-        padding: calc(var(--unit) * 3);
-        font-family: var(--font-body);
+        color: #666;
     }
 
     .edition-form {
         max-width: 1200px;
         margin: 0 auto;
-        padding: var(--unit);
-    }
-
-    .error {
-        background-color: #ffebee;
-        color: var(--color-warn);
-        padding: var(--unit);
-        margin-bottom: calc(var(--unit) * 2);
-        border: 1px solid var(--color-warn);
-        font-family: var(--font-body);
     }
 
     .form-section {
         margin-bottom: calc(var(--unit) * 3);
         padding: calc(var(--unit) * 1.5);
-        border: 1px solid #ddd;
+        border: 1px solid #dee2e6;
         background-color: white;
     }
 
@@ -362,6 +356,7 @@
         font-size: calc(var(--unit) * 1.25);
         font-weight: 700;
         margin: 0 0 calc(var(--unit) * 1.5) 0;
+        color: var(--color-fg);
     }
 
     .form-group {
@@ -373,6 +368,7 @@
         font-family: var(--font-hed);
         font-weight: 600;
         margin-bottom: calc(var(--unit) * 0.5);
+        color: var(--color-fg);
     }
 
     .form-group input,
@@ -380,19 +376,17 @@
         width: 100%;
         max-width: 300px;
         padding: calc(var(--unit) * 0.75);
-        border: 1px solid var(--color-fg);
+        border: 1px solid #ced4da;
         font-family: var(--font-body);
         font-size: var(--unit);
+        border-radius: 0;
     }
 
-    .empty-content {
-        font-family: var(--font-body);
-        color: #666;
-        font-style: italic;
-    }
-
-    .empty-content a {
-        color: var(--color-off);
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--color-off);
+        box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
     }
 
     .content-grid {
@@ -402,30 +396,32 @@
     }
 
     .content-card {
-        border: 1px solid #ddd;
+        border: 1px solid #dee2e6;
         padding: var(--unit);
-        background-color: #fafafa;
+        background-color: white;
         transition: all 0.2s ease;
     }
 
     .content-card.selected {
         border-color: var(--color-off);
         background-color: #f0f8ff;
+        box-shadow: 0 2px 4px rgba(0, 102, 204, 0.1);
     }
 
     .content-header h3 {
         font-family: var(--font-hed);
-        font-size: var(--unit);
+        font-size: calc(var(--unit) * 1.1);
         font-weight: 700;
         margin: 0 0 calc(var(--unit) * 0.5) 0;
         line-height: 1.2;
+        color: var(--color-fg);
     }
 
     .content-authors {
         font-family: var(--font-body);
         font-size: calc(var(--unit) * 0.85);
-        color: #666;
-        font-style: italic;
+        color: var(--color-off);
+        font-weight: 600;
         margin-bottom: calc(var(--unit) * 0.75);
     }
 
@@ -434,7 +430,7 @@
         font-size: calc(var(--unit) * 0.9);
         line-height: 1.4;
         margin-bottom: calc(var(--unit) * 1);
-        color: #333;
+        color: #495057;
     }
 
     .image-preview {
@@ -443,49 +439,14 @@
 
     .image-preview img {
         width: 100%;
-        height: 120px;
+        height: 150px;
         object-fit: cover;
-        border: 1px solid #ddd;
-    }
-
-    .btn {
-        display: inline-block;
-        padding: calc(var(--unit) * 0.75);
-        text-decoration: none;
-        font-family: var(--font-body);
-        font-size: calc(var(--unit) * 0.9);
-        font-weight: 600;
-        text-align: center;
-        transition: opacity 0.2s ease;
-        border: 1px solid var(--color-fg);
-        cursor: pointer;
-        background: none;
-    }
-
-    .btn:hover:not(:disabled) {
-        opacity: 0.8;
-    }
-
-    .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .btn-primary {
-        background-color: var(--color-off);
-        color: var(--color-bg);
-        border-color: var(--color-off);
-    }
-
-    .btn-secondary {
-        background-color: var(--color-bg);
-        color: var(--color-fg);
-        border-color: var(--color-fg);
+        border: 1px solid #dee2e6;
     }
 
     .btn-small {
         padding: calc(var(--unit) * 0.5) calc(var(--unit) * 0.75);
-        font-size: calc(var(--unit) * 0.8);
+        font-size: calc(var(--unit) * 0.85);
     }
 
     .form-actions {
@@ -494,10 +455,10 @@
         justify-content: center;
         margin-top: calc(var(--unit) * 3);
         padding-top: calc(var(--unit) * 2);
-        border-top: 1px solid #ddd;
+        border-top: 1px solid #dee2e6;
     }
 
-    /* Cover Image Selection Styles */
+    /* Cover Image Selection */
     .cover-image-selection {
         display: grid;
         gap: calc(var(--unit) * 1);
@@ -518,7 +479,7 @@
     .cover-label {
         display: block;
         cursor: pointer;
-        border: 2px solid #ddd;
+        border: 2px solid #dee2e6;
         transition: all 0.2s ease;
         background-color: white;
     }
@@ -532,11 +493,11 @@
     .no-cover-preview {
         padding: calc(var(--unit) * 2);
         text-align: center;
-        color: #666;
+        color: #6c757d;
         font-family: var(--font-body);
         font-style: italic;
-        background-color: #f9f9f9;
-        border: 2px dashed #ddd;
+        background-color: #f8f9fa;
+        border: 2px dashed #dee2e6;
         min-height: 120px;
         display: flex;
         align-items: center;
@@ -558,7 +519,7 @@
         width: 100%;
         height: 120px;
         object-fit: cover;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #e9ecef;
     }
 
     .cover-info {
@@ -568,8 +529,9 @@
     .cover-filename {
         font-family: var(--font-hed);
         font-weight: 600;
-        font-size: calc(var(--unit) * 0.85);
+        font-size: calc(var(--unit) * 0.9);
         margin-bottom: calc(var(--unit) * 0.25);
+        color: var(--color-fg);
     }
 
     .cover-type {
@@ -584,7 +546,7 @@
     .cover-authors {
         font-family: var(--font-body);
         font-size: calc(var(--unit) * 0.75);
-        color: #666;
+        color: #6c757d;
         font-style: italic;
     }
 </style>

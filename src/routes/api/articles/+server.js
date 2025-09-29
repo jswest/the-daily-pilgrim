@@ -1,27 +1,31 @@
 import { json } from '@sveltejs/kit';
-import { ArticleModel } from '$lib/db/models/articles.js';
-import { initializeDatabase } from '$lib/db/connection.js';
-
-let articleModel;
-
-function ensureDatabase() {
-    if (!articleModel) {
-        try {
-            initializeDatabase();
-            articleModel = new ArticleModel();
-        } catch (error) {
-            console.error('Database initialization failed:', error);
-            throw error;
-        }
-    }
-    return articleModel;
-}
+import { getDatabase } from '$lib/db/connection.js';
+import { articles, articleAuthors } from '$lib/db/schema.js';
+import { eq } from 'drizzle-orm';
 
 export async function GET() {
     try {
-        const model = ensureDatabase();
-        const articles = await model.getAll();
-        return json(articles);
+        const db = getDatabase();
+
+        const articlesWithAuthors = await db.query.articles.findMany({
+            with: {
+                authors: {
+                    with: {
+                        author: true,
+                    },
+                    orderBy: (articleAuthors, { asc }) => [asc(articleAuthors.orderPosition)],
+                },
+            },
+            orderBy: (articles, { desc }) => [desc(articles.createdAt)],
+        });
+
+        // Format authors as comma-separated string for UI compatibility
+        const formatted = articlesWithAuthors.map(article => ({
+            ...article,
+            authors: article.authors.map(a => a.author.name).join(', ')
+        }));
+
+        return json(formatted);
     } catch (error) {
         console.error('Error fetching articles:', error);
         return json({ error: 'Failed to fetch articles' }, { status: 500 });
@@ -30,16 +34,35 @@ export async function GET() {
 
 export async function POST({ request }) {
     try {
-        const model = ensureDatabase();
-        const { hed, dek, body, authorIds, title_image_id } = await request.json();
-        
+        const db = getDatabase();
+        const { hed, dek, body, authorIds = [], title_image_id } = await request.json();
+
         if (!hed || !body) {
             return json({ error: 'Hed and body are required' }, { status: 400 });
         }
-        
-        const articleData = { hed, dek, body, title_image_id };
-        const article = await model.create(articleData, authorIds || []);
-        
+
+        // Create the article first
+        const [article] = await db
+            .insert(articles)
+            .values({
+                hed,
+                dek,
+                body,
+                titleImageId: title_image_id,
+            })
+            .returning();
+
+        // Add author relationships
+        if (authorIds.length > 0) {
+            for (let i = 0; i < authorIds.length; i++) {
+                await db.insert(articleAuthors).values({
+                    articleId: article.id,
+                    authorId: authorIds[i],
+                    orderPosition: i + 1,
+                });
+            }
+        }
+
         return json(article);
     } catch (error) {
         console.error('Error creating article:', error);

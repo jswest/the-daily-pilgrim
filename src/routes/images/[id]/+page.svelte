@@ -1,8 +1,11 @@
 <script>
     import { goto } from '$app/navigation';
+    import Header from '$lib/components/Header.svelte';
+    import Button from '$lib/components/base/Button.svelte';
+    import PageContainer from '$lib/components/base/PageContainer.svelte';
 
     let { data } = $props();
-    
+
     let image = $state(data.image);
     let error = $state(data.error || '');
     let imageId = $state(data.imageId);
@@ -19,7 +22,7 @@
 
     function getImageUrl(image) {
         // Force original if toggle is on, or if not processed yet
-        if (showOriginal || !image.is_processed || image.processing_status !== 'completed') {
+        if (showOriginal || !image.isProcessed || image.processingStatus !== 'completed') {
             return `/api/images/${image.id}/file?original=true`;
         }
         return `/api/images/${image.id}/file`; // Serve processed version
@@ -102,7 +105,7 @@
 
             if (response.ok) {
                 // Update image processing status
-                image.processing_status = 'pending';
+                image.processingStatus = 'pending';
                 error = '';
             } else {
                 error = result.error || 'Failed to retry processing';
@@ -118,36 +121,30 @@
     <title>{image ? image.filename : 'Image'} - The Daily Pilgrim</title>
 </svelte:head>
 
-<div class="page-container">
-    <header class="page-header">
-        <div class="header-content">
-            <nav class="breadcrumb">
-                <a href="/">Home</a>
-                <span>→</span>
-                <a href="/images">Images</a>
-                <span>→</span>
-                <span>{image ? image.filename : 'Loading...'}</span>
-            </nav>
-            
-            {#if image}
-                <div class="header-actions">
-                    {#if image.processing_status === 'failed'}
-                        <button onclick={() => retryProcessing(image.id)} class="btn btn-warning">Retry Processing</button>
-                    {/if}
-                    <a href="/images/{image.id}/edit" class="btn btn-secondary">Edit</a>
-                    <button onclick={deleteImage} class="btn btn-danger">Delete</button>
-                </div>
-            {/if}
-        </div>
-    </header>
+<Header
+    breadcrumbs={[
+        { href: "/", label: "Home" },
+        { href: "/images", label: "Images" },
+        { label: image ? image.filename : "Loading..." }
+    ]}
+/>
 
-    <main>
-        {#if error}
-            <div class="alert alert-error">
-                {error}
-                <a href="/images" class="back-link">← Back to Images</a>
+<PageContainer>
+    {#if error}
+        <div class="alert">
+            {error}
+            <Button variant="secondary" href="/images">← Back to Images</Button>
+        </div>
+    {:else if image}
+        <div class="image-header">
+            <div class="header-actions">
+                {#if image.processingStatus === 'failed'}
+                    <button onclick={() => retryProcessing(image.id)} class="btn btn-warning">Retry Processing</button>
+                {/if}
+                <Button variant="secondary" href="/images/{image.id}/edit">Edit</Button>
+                <button onclick={deleteImage} class="btn btn-danger">Delete</button>
             </div>
-        {:else if image}
+        </div>
             <div class="image-content">
                 <div class="image-display">
                     <div class="image-container">
@@ -159,16 +156,16 @@
                         />
                         <div class="image-overlay-badges">
                             <div class="image-type-badge">
-                                {getImageTypeLabel(image.image_type)}
+                                {getImageTypeLabel(image.imageType)}
                             </div>
-                            {#if image.is_processed && image.processing_status === 'completed'}
+                            {#if image.isProcessed && image.processingStatus === 'completed'}
                                 <div class="version-badge">
                                     {showOriginal ? 'Original' : '1-bit Dithered'}
                                 </div>
                             {/if}
                         </div>
-                        
-                        {#if image.is_processed && image.processing_status === 'completed'}
+
+                        {#if image.isProcessed && image.processingStatus === 'completed'}
                             <div class="version-toggle">
                                 <button 
                                     onclick={() => showOriginal = !showOriginal}
@@ -196,7 +193,7 @@
                             <div class="metadata-grid">
                                 <div class="metadata-item">
                                     <span class="label">Type:</span>
-                                    <span class="value">{getImageTypeLabel(image.image_type)}</span>
+                                    <span class="value">{getImageTypeLabel(image.imageType)}</span>
                                 </div>
                                 
                                 {#if image.width && image.height}
@@ -208,34 +205,34 @@
                                 
                                 <div class="metadata-item">
                                     <span class="label">Processing Status:</span>
-                                    <span class="value processing-status {getProcessingStatusClass(image.processing_status)}">
-                                        {getProcessingStatusLabel(image.processing_status)}
+                                    <span class="value processing-status {getProcessingStatusClass(image.processingStatus)}">
+                                        {getProcessingStatusLabel(image.processingStatus)}
                                     </span>
                                 </div>
                                 
-                                {#if image.processing_attempts > 0}
+                                {#if image.processingAttempts > 0}
                                     <div class="metadata-item">
                                         <span class="label">Processing Attempts:</span>
-                                        <span class="value">{image.processing_attempts}</span>
+                                        <span class="value">{image.processingAttempts}</span>
                                     </div>
                                 {/if}
-                                
-                                {#if image.processing_error}
+
+                                {#if image.processingError}
                                     <div class="metadata-item">
                                         <span class="label">Processing Error:</span>
-                                        <span class="value error-text">{image.processing_error}</span>
+                                        <span class="value error-text">{image.processingError}</span>
                                     </div>
                                 {/if}
-                                
+
                                 <div class="metadata-item">
                                     <span class="label">File Path:</span>
-                                    <span class="value">{image.original_path}</span>
+                                    <span class="value">{image.originalPath}</span>
                                 </div>
-                                
-                                {#if image.processed_path}
+
+                                {#if image.processedPath}
                                     <div class="metadata-item">
                                         <span class="label">Processed Path:</span>
-                                        <span class="value">{image.processed_path}</span>
+                                        <span class="value">{image.processedPath}</span>
                                     </div>
                                 {/if}
                             </div>
@@ -260,21 +257,21 @@
                             <div class="metadata-grid">
                                 <div class="metadata-item">
                                     <span class="label">Uploaded:</span>
-                                    <span class="value">{new Date(image.created_at).toLocaleDateString('en-US', { 
-                                        year: 'numeric', 
-                                        month: 'long', 
+                                    <span class="value">{new Date(image.createdAt).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
                                         day: 'numeric',
                                         hour: '2-digit',
                                         minute: '2-digit'
                                     })}</span>
                                 </div>
-                                
-                                {#if image.updated_at !== image.created_at}
+
+                                {#if image.updatedAt !== image.createdAt}
                                     <div class="metadata-item">
                                         <span class="label">Updated:</span>
-                                        <span class="value">{new Date(image.updated_at).toLocaleDateString('en-US', { 
-                                            year: 'numeric', 
-                                            month: 'long', 
+                                        <span class="value">{new Date(image.updatedAt).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'long',
                                             day: 'numeric',
                                             hour: '2-digit',
                                             minute: '2-digit'
@@ -286,93 +283,31 @@
                     </div>
                 </div>
             </div>
-        {/if}
-    </main>
-</div>
+    {/if}
+</PageContainer>
 
 <style>
-    .page-container {
-        min-height: 100vh;
-        background: #f9fafb;
-    }
-
-    .page-header {
-        background: white;
-        border-bottom: 1px solid #e5e7eb;
-        padding: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .header-content {
-        max-width: 1200px;
-        margin: 0 auto;
+    .image-header {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .breadcrumb {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        color: #6b7280;
-    }
-
-    .breadcrumb a {
-        color: #3b82f6;
-        text-decoration: none;
-    }
-
-    .breadcrumb a:hover {
-        text-decoration: underline;
+        justify-content: flex-end;
+        margin-bottom: calc(var(--unit) * 2);
     }
 
     .header-actions {
         display: flex;
-        gap: 0.75rem;
-    }
-
-    .alert {
-        max-width: 1200px;
-        margin: 0 auto 2rem auto;
-        padding: 1rem;
-        border-radius: 0.375rem;
-        background: #fee2e2;
-        color: #991b1b;
-        border: 1px solid #fca5a5;
-        text-align: center;
-    }
-
-    .back-link {
-        display: inline-block;
-        margin-top: 0.5rem;
-        color: #3b82f6;
-        text-decoration: none;
-    }
-
-    .back-link:hover {
-        text-decoration: underline;
-    }
-
-    main {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 2rem 3rem 2rem;
+        gap: var(--unit);
     }
 
     .image-content {
         display: grid;
         grid-template-columns: 1fr 400px;
-        gap: 2rem;
+        gap: calc(var(--unit) * 2);
     }
 
     .image-display {
-        background: white;
-        border-radius: 0.5rem;
-        border: 1px solid #e5e7eb;
+        background-color: var(--color-bg);
+        border: 1px solid #dee2e6;
         overflow: hidden;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     }
 
     .image-container {
@@ -381,7 +316,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f9fafb;
+        background-color: #f8f9fa;
     }
 
     .main-image {
@@ -392,21 +327,20 @@
 
     .image-overlay-badges {
         position: absolute;
-        top: 1rem;
-        right: 1rem;
+        top: var(--unit);
+        right: var(--unit);
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: calc(var(--unit) * 0.5);
         align-items: flex-end;
     }
 
     .image-type-badge,
     .version-badge {
         background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
+        color: var(--color-bg);
+        padding: calc(var(--unit) * 0.5) var(--unit);
+        font-size: calc(var(--unit) * 0.875);
         font-weight: 500;
     }
 
@@ -416,17 +350,16 @@
 
     .version-toggle {
         position: absolute;
-        bottom: 1rem;
-        right: 1rem;
+        bottom: var(--unit);
+        right: var(--unit);
     }
 
     .toggle-btn {
         background: rgba(0, 0, 0, 0.8);
-        color: white;
+        color: var(--color-bg);
         border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
+        padding: calc(var(--unit) * 0.75) calc(var(--unit) * 1.5);
+        font-size: calc(var(--unit) * 0.875);
         font-weight: 500;
         cursor: pointer;
         transition: background-color 0.2s;
@@ -439,42 +372,40 @@
     .image-details {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: calc(var(--unit) * 1.5);
     }
 
     .image-header {
-        background: white;
-        border-radius: 0.5rem;
-        border: 1px solid #e5e7eb;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        background-color: var(--color-bg);
+        border: 1px solid #dee2e6;
+        padding: calc(var(--unit) * 1.5);
     }
 
     .image-title {
-        margin: 0 0 0.5rem 0;
-        font-size: 1.5rem;
+        font-family: var(--font-hed);
+        font-size: calc(var(--unit) * 1.5);
         font-weight: 600;
-        color: #111827;
+        color: var(--color-fg);
+        margin: 0 0 calc(var(--unit) * 0.5) 0;
         word-break: break-word;
     }
 
     .image-caption {
-        margin: 0;
-        color: #6b7280;
+        font-family: var(--font-body);
+        color: #666;
         font-style: italic;
         line-height: 1.5;
+        margin: 0;
     }
 
     .image-metadata {
-        background: white;
-        border-radius: 0.5rem;
-        border: 1px solid #e5e7eb;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        background-color: var(--color-bg);
+        border: 1px solid #dee2e6;
+        padding: calc(var(--unit) * 1.5);
     }
 
     .metadata-section {
-        margin-bottom: 2rem;
+        margin-bottom: calc(var(--unit) * 2);
     }
 
     .metadata-section:last-child {
@@ -482,151 +413,93 @@
     }
 
     .metadata-section h3 {
-        margin: 0 0 1rem 0;
-        font-size: 1.125rem;
+        font-family: var(--font-hed);
+        font-size: calc(var(--unit) * 1.125);
         font-weight: 600;
-        color: #111827;
+        color: var(--color-fg);
+        margin: 0 0 var(--unit) 0;
     }
 
     .metadata-grid {
         display: grid;
-        gap: 0.75rem;
+        gap: calc(var(--unit) * 0.75);
     }
 
     .metadata-item {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        gap: 1rem;
+        gap: var(--unit);
     }
 
     .metadata-item .label {
+        font-family: var(--font-body);
         font-weight: 500;
-        color: #6b7280;
+        color: #666;
         flex-shrink: 0;
     }
 
     .metadata-item .value {
-        color: #111827;
+        font-family: var(--font-body);
+        color: var(--color-fg);
         text-align: right;
         word-break: break-word;
     }
 
-    .value.processed {
-        color: #059669;
-        font-weight: 500;
-    }
-
-    .value.unprocessed {
-        color: #dc2626;
-        font-weight: 500;
-    }
-
-    .authors-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .author-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .author-name {
-        font-weight: 500;
-        color: #111827;
-    }
-
-    .author-role {
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-
-    .btn {
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        text-decoration: none;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        display: inline-block;
-        text-align: center;
-    }
-
-    .btn-secondary {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-    .btn-secondary:hover {
-        background: #e5e7eb;
-    }
-
-    .btn-danger {
-        background: #dc2626;
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background: #b91c1c;
-    }
-
     .btn-warning {
-        background: #f59e0b;
-        color: white;
+        background-color: var(--color-warn);
+        color: var(--color-bg);
+        border: none;
+        padding: calc(var(--unit) * 0.5) var(--unit);
+        font-family: var(--font-hed);
+        font-size: var(--unit);
+        cursor: pointer;
+        opacity: 0.5;
+        transition: opacity 0.2s;
     }
 
     .btn-warning:hover {
-        background: #d97706;
+        opacity: 1;
     }
 
-    .processing-status {
-        font-weight: 500;
+    .btn-danger {
+        background-color: #dc2626;
+        color: var(--color-bg);
+        border: none;
+        padding: calc(var(--unit) * 0.5) var(--unit);
+        font-family: var(--font-hed);
+        font-size: var(--unit);
+        cursor: pointer;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+    }
+
+    .btn-danger:hover {
+        opacity: 1;
     }
 
     .processing-status.status-pending {
-        color: #f59e0b;
-    }
-
-    .processing-status.status-processing {
-        color: #3b82f6;
+        color: var(--color-warn);
     }
 
     .processing-status.status-completed {
-        color: #10b981;
+        color: #059669;
     }
 
     .processing-status.status-failed {
-        color: #ef4444;
-    }
-
-    .error-text {
-        color: #ef4444;
-        font-family: monospace;
-        font-size: 0.875rem;
-        word-break: break-word;
+        color: #dc2626;
     }
 
     @media (max-width: 768px) {
-        .header-content {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
         .image-content {
             grid-template-columns: 1fr;
-            gap: 1.5rem;
+            gap: calc(var(--unit) * 1.5);
         }
 
         .metadata-item {
             flex-direction: column;
             align-items: flex-start;
-            gap: 0.25rem;
+            gap: calc(var(--unit) * 0.25);
         }
 
         .metadata-item .value {

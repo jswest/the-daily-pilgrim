@@ -2,6 +2,7 @@
   import { marked } from "marked";
   import Header from "$lib/components/Header.svelte";
   import Article from "$lib/components/Article.svelte";
+  import Button from "$lib/components/base/Button.svelte";
   import { goto } from "$app/navigation";
   import { oxford } from "$lib/util.js";
 
@@ -48,9 +49,7 @@
 <div class="page-container">
   {#if article}
     <div class="page-actions">
-      <a href="/articles/{article.id}/edit" class="btn btn-secondary"
-        >Edit</a
-      >
+      <Button variant="secondary" href="/articles/{article.id}/edit">Edit</Button>
       <button onclick={deleteArticle} class="btn btn-danger">Delete</button>
     </div>
   {/if}
@@ -70,24 +69,39 @@
 <style>
   .page-container {
     min-height: 100vh;
-    background: #f9fafb;
+    background-color: var(--color-bg);
   }
 
   .page-actions {
     max-width: 800px;
-    margin: 0 auto 2rem auto;
+    margin: 0 auto calc(var(--unit) * 2) auto;
     display: flex;
     justify-content: flex-end;
-    gap: 0.75rem;
-    padding: 0 2rem;
+    gap: var(--unit);
+    padding: 0 calc(var(--unit) * 2);
+  }
+
+  .btn-danger {
+    background-color: #dc2626;
+    color: var(--color-bg);
+    border: none;
+    padding: calc(var(--unit) * 0.5) var(--unit);
+    font-family: var(--font-hed);
+    font-size: var(--unit);
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+  }
+
+  .btn-danger:hover {
+    opacity: 1;
   }
 
   .alert {
     max-width: 800px;
-    margin: 0 auto 2rem auto;
-    padding: 1rem;
-    border-radius: 0.375rem;
-    background: #fee2e2;
+    margin: 0 auto calc(var(--unit) * 2) auto;
+    padding: var(--unit);
+    background-color: #fee2e2;
     color: #991b1b;
     border: 1px solid #fca5a5;
     text-align: center;
@@ -95,8 +109,8 @@
 
   .back-link {
     display: inline-block;
-    margin-top: 0.5rem;
-    color: #3b82f6;
+    margin-top: calc(var(--unit) * 0.5);
+    color: var(--color-off);
     text-decoration: none;
   }
 

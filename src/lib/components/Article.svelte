@@ -5,7 +5,7 @@
 
   let { article } = $props();
 
-  console.log(article);
+  console.log(article.titleImage);
 </script>
 
 <article class="article-content">
@@ -25,8 +25,8 @@
         />
         <figcaption>
           {article.titleImage.caption}
-          {#if article.titleImage.byline}
-            — Photo by {article.titleImage.byline}
+          {#if article.titleImage.authors}
+            — by {oxford(article.titleImage.authors.map((au) => au.name))}
           {/if}
         </figcaption>
       </figure>
@@ -102,13 +102,6 @@
     transform-origin: 0 0;
     transform: scaleX(75%);
     width: calc((400px - var(--unit) - var(--unit)) / 0.75);
-  }
-
-  .authors {
-    font-family: var(--font-hed);
-    font-size: var(--unit);
-    font-weight: 900;
-    padding: 0 var(--unit);
   }
 
   .article-body {

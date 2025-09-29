@@ -1,47 +1,50 @@
 import { error } from '@sveltejs/kit';
-import { getDatabase, initializeDatabase } from '$lib/db/connection.js';
+import { getDatabase } from '$lib/db/connection.js';
 
 export async function load({ params }) {
     try {
-        initializeDatabase();
-        const database = getDatabase();
-        const imageId = params.id;
+        const db = getDatabase();
+        const imageId = parseInt(params.id);
 
-        // Get the image
-        const image = database.prepare(`
-            SELECT id, filename, original_path, processed_path, caption, image_type, 
-                   width, height, is_processed, processing_status, created_at, updated_at
-            FROM images 
-            WHERE id = ?
-        `).get(imageId);
+        if (isNaN(imageId)) {
+            throw error(400, 'Invalid image ID');
+        }
+
+        const image = await db.query.images.findFirst({
+            where: (images, { eq }) => eq(images.id, imageId),
+            with: {
+                authors: {
+                    with: {
+                        author: true,
+                    },
+                },
+            },
+        });
 
         if (!image) {
             throw error(404, 'Image not found');
         }
 
-        // Get the image's authors
-        const authors = database.prepare(`
-            SELECT a.id, a.name, a.bio, ia.role
-            FROM authors a
-            JOIN image_authors ia ON a.id = ia.author_id
-            WHERE ia.image_id = ?
-            ORDER BY a.name
-        `).all(imageId);
-
-        // Add authors to image
-        image.authors = authors;
+        // Format authors for the form
+        const formattedImage = {
+            ...image,
+            authors: image.authors.map(a => ({
+                ...a.author,
+                role: a.role
+            }))
+        };
 
         return {
-            image,
+            image: formattedImage,
             imageId
         };
     } catch (err) {
         console.error('Error loading image for edit:', err);
-        
-        if (err.status === 404) {
+
+        if (err.status === 404 || err.status === 400) {
             throw err;
         }
-        
+
         throw error(500, 'Failed to load image');
     }
 }

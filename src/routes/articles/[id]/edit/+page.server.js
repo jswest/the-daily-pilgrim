@@ -1,46 +1,48 @@
 import { error } from '@sveltejs/kit';
-import { getDatabase, initializeDatabase } from '$lib/db/connection.js';
+import { getDatabase } from '$lib/db/connection.js';
 
 export async function load({ params }) {
     try {
-        initializeDatabase();
-        const database = getDatabase();
-        const articleId = params.id;
+        const db = getDatabase();
+        const articleId = parseInt(params.id);
 
-        // Get the article
-        const article = database.prepare(`
-            SELECT id, hed, dek, body, created_at, updated_at
-            FROM articles 
-            WHERE id = ?
-        `).get(articleId);
+        if (isNaN(articleId)) {
+            throw error(400, 'Invalid article ID');
+        }
+
+        const article = await db.query.articles.findFirst({
+            where: (articles, { eq }) => eq(articles.id, articleId),
+            with: {
+                authors: {
+                    with: {
+                        author: true,
+                    },
+                    orderBy: (articleAuthors, { asc }) => [asc(articleAuthors.orderPosition)],
+                },
+            },
+        });
 
         if (!article) {
             throw error(404, 'Article not found');
         }
 
-        // Get the article's authors
-        const authors = database.prepare(`
-            SELECT a.id, a.name, a.bio
-            FROM authors a
-            JOIN article_authors aa ON a.id = aa.author_id
-            WHERE aa.article_id = ?
-            ORDER BY a.name
-        `).all(articleId);
-
-        // Add authors to article
-        article.authors = authors;
+        // Format authors for the form
+        const formattedArticle = {
+            ...article,
+            authors: article.authors.map(a => a.author)
+        };
 
         return {
-            article,
+            article: formattedArticle,
             articleId
         };
     } catch (err) {
         console.error('Error loading article for edit:', err);
-        
-        if (err.status === 404) {
+
+        if (err.status === 404 || err.status === 400) {
             throw err;
         }
-        
+
         throw error(500, 'Failed to load article');
     }
 }

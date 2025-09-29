@@ -1,7 +1,9 @@
-import { getDatabase, initializeDatabase } from '../db/connection.js';
+import { getDatabase } from '../db/connection.js';
+import { images } from "../db/schema.js";
 import { floydSteinbergDither, getImageDimensions, validateImage } from './dithering.js';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { eq, or, and, lt, asc, desc, count } from 'drizzle-orm';
 
 export class ImageProcessor {
     constructor(options = {}) {
@@ -20,7 +22,6 @@ export class ImageProcessor {
 
     async initialize() {
         try {
-            initializeDatabase();
             this.db = getDatabase();
             console.log('Image processor initialized');
         } catch (error) {
@@ -32,19 +33,21 @@ export class ImageProcessor {
     /**
      * Get next batch of images to process
      */
-    getNextBatch() {
+    async getNextBatch() {
         try {
-            const query = `
-                SELECT * FROM images 
-                WHERE processing_status IN ('pending', 'failed') 
-                AND processing_attempts < ?
-                ORDER BY 
-                    CASE WHEN processing_status = 'pending' THEN 0 ELSE 1 END,
-                    created_at ASC
-                LIMIT ?
-            `;
-            
-            return this.db.prepare(query).all(this.options.maxRetries, this.options.batchSize);
+            const pendingImages = await this.db.query.images.findMany({
+                where: and(
+                    or(
+                        eq(images.processingStatus, 'pending'),
+                        eq(images.processingStatus, 'failed')
+                    ),
+                    lt(images.processingAttempts, this.options.maxRetries)
+                ),
+                orderBy: [asc(images.createdAt)],
+                limit: this.options.batchSize
+            });
+
+            return pendingImages;
         } catch (error) {
             console.error('Error getting next batch:', error);
             return [];
@@ -54,41 +57,46 @@ export class ImageProcessor {
     /**
      * Update image processing status
      */
-    updateImageStatus(imageId, status, data = {}) {
+    async updateImageStatus(imageId, status, data = {}) {
         try {
-            const updates = [`processing_status = ?`, `updated_at = CURRENT_TIMESTAMP`];
-            const values = [status];
-            
+            const updateData = {
+                processingStatus: status,
+                updatedAt: new Date().toISOString()
+            };
+
             if (status === 'processing') {
-                updates.push(`processing_started_at = CURRENT_TIMESTAMP`);
-                updates.push(`processing_attempts = processing_attempts + 1`);
+                updateData.processingStartedAt = new Date().toISOString();
+                // For incrementing attempts, we need to fetch current value first
+                const currentImage = await this.db.query.images.findFirst({
+                    where: eq(images.id, imageId),
+                    columns: { processingAttempts: true }
+                });
+                updateData.processingAttempts = (currentImage?.processingAttempts || 0) + 1;
             }
-            
+
             if (status === 'completed') {
-                updates.push(`processing_completed_at = CURRENT_TIMESTAMP`);
-                updates.push(`is_processed = 1`);
-                
+                updateData.processingCompletedAt = new Date().toISOString();
+                updateData.isProcessed = true;
+
                 if (data.processedPath) {
-                    updates.push(`processed_path = ?`);
-                    values.push(data.processedPath);
+                    updateData.processedPath = data.processedPath;
                 }
-                
+
                 if (data.width && data.height) {
-                    updates.push(`width = ?`, `height = ?`);
-                    values.push(data.width, data.height);
+                    updateData.width = data.width;
+                    updateData.height = data.height;
                 }
             }
-            
+
             if (status === 'failed' && data.error) {
-                updates.push(`processing_error = ?`);
-                values.push(data.error);
+                updateData.processingError = data.error;
             }
-            
-            values.push(imageId);
-            
-            const query = `UPDATE images SET ${updates.join(', ')} WHERE id = ?`;
-            this.db.prepare(query).run(...values);
-            
+
+            await this.db
+                .update(images)
+                .set(updateData)
+                .where(eq(images.id, imageId));
+
         } catch (error) {
             console.error('Error updating image status:', error);
         }
@@ -99,17 +107,17 @@ export class ImageProcessor {
      */
     async processImage(image) {
         const imageId = image.id;
-        
+
         try {
             console.log(`Processing image ${imageId}: ${image.filename}`);
-            
+
             // Mark as processing
-            this.updateImageStatus(imageId, 'processing');
-            
+            await this.updateImageStatus(imageId, 'processing');
+
             // Check if original file exists
-            const originalPath = join(process.cwd(), image.original_path);
+            const originalPath = join(process.cwd(), image.originalPath);
             if (!existsSync(originalPath)) {
-                throw new Error(`Original file not found: ${image.original_path}`);
+                throw new Error(`Original file not found: ${image.originalPath}`);
             }
             
             // Read original file
@@ -144,18 +152,18 @@ export class ImageProcessor {
             writeFileSync(processedPath, processedBuffer);
             
             // Update database
-            this.updateImageStatus(imageId, 'completed', {
+            await this.updateImageStatus(imageId, 'completed', {
                 processedPath: `src/images/${processedFilename}`,
                 width,
                 height
             });
-            
+
             console.log(`Successfully processed image ${imageId}`);
-            
+
         } catch (error) {
             console.error(`Error processing image ${imageId}:`, error);
-            
-            this.updateImageStatus(imageId, 'failed', {
+
+            await this.updateImageStatus(imageId, 'failed', {
                 error: error.message
             });
             
@@ -167,7 +175,7 @@ export class ImageProcessor {
      * Process a batch of images
      */
     async processBatch() {
-        const batch = this.getNextBatch();
+        const batch = await this.getNextBatch();
         
         if (batch.length === 0) {
             return 0;
@@ -247,47 +255,39 @@ export class ImageProcessor {
         if (!this.db) {
             await this.initialize();
         }
-        
-        const image = this.db.prepare('SELECT * FROM images WHERE id = ?').get(imageId);
-        
+
+        const image = await this.db.query.images.findFirst({
+            where: eq(images.id, imageId)
+        });
+
         if (!image) {
             throw new Error(`Image with ID ${imageId} not found`);
         }
-        
+
         await this.processImage(image);
     }
 
     /**
      * Get processing queue status
      */
-    getQueueStatus() {
+    async getQueueStatus() {
         if (!this.db) {
             throw new Error('Worker not initialized');
         }
-        
-        const statusQuery = `
-            SELECT 
-                processing_status,
-                COUNT(*) as count
-            FROM images 
-            GROUP BY processing_status
-        `;
-        
-        const results = this.db.prepare(statusQuery).all();
-        
-        const status = {
-            pending: 0,
-            processing: 0,
-            completed: 0,
-            failed: 0
-        };
-        
-        results.forEach(row => {
-            status[row.processing_status] = row.count;
-        });
-        
+
+        // Get counts for each status
+        const statusCounts = await Promise.all([
+            this.db.select({ count: count() }).from(images).where(eq(images.processingStatus, 'pending')),
+            this.db.select({ count: count() }).from(images).where(eq(images.processingStatus, 'processing')),
+            this.db.select({ count: count() }).from(images).where(eq(images.processingStatus, 'completed')),
+            this.db.select({ count: count() }).from(images).where(eq(images.processingStatus, 'failed'))
+        ]);
+
         return {
-            ...status,
+            pending: statusCounts[0][0]?.count || 0,
+            processing: statusCounts[1][0]?.count || 0,
+            completed: statusCounts[2][0]?.count || 0,
+            failed: statusCounts[3][0]?.count || 0,
             currentJobs: this.currentJobs.size,
             isRunning: this.isRunning
         };
@@ -296,21 +296,22 @@ export class ImageProcessor {
     /**
      * Reset failed images to pending status
      */
-    resetFailedImages() {
+    async resetFailedImages() {
         if (!this.db) {
             throw new Error('Worker not initialized');
         }
-        
-        const result = this.db.prepare(`
-            UPDATE images 
-            SET processing_status = 'pending', 
-                processing_error = NULL,
-                processing_attempts = 0,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE processing_status = 'failed'
-        `).run();
-        
-        return result.changes;
+
+        const result = await this.db
+            .update(images)
+            .set({
+                processingStatus: 'pending',
+                processingError: null,
+                processingAttempts: 0,
+                updatedAt: new Date().toISOString()
+            })
+            .where(eq(images.processingStatus, 'failed'));
+
+        return result.rowsAffected || 0;
     }
 
     /**

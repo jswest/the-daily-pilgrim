@@ -1,12 +1,12 @@
 import puppeteer from "puppeteer";
 import { readFileSync, existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
-import { EditionModel } from "../db/models/editions.js";
+import { getDatabase } from "../db/connection.js";
 import { marked } from "marked";
 
 export class PDFGenerator {
   constructor() {
-    this.editionModel = new EditionModel();
+    this.db = getDatabase();
     this.browser = null;
     this.outputDir = "generated";
 
@@ -35,7 +35,41 @@ export class PDFGenerator {
   async generateEditionPDF(editionId) {
     await this.initialize();
 
-    const edition = await this.editionModel.getById(editionId);
+    const edition = await this.db.query.editions.findFirst({
+      where: (editions, { eq }) => eq(editions.id, editionId),
+      with: {
+        articles: {
+          with: {
+            article: {
+              with: {
+                authors: {
+                  with: {
+                    author: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: (editionArticles, { asc }) => [asc(editionArticles.orderPosition)],
+        },
+        poems: {
+          with: {
+            poem: {
+              with: {
+                authors: {
+                  with: {
+                    author: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: (editionPoems, { asc }) => [asc(editionPoems.orderPosition)],
+        },
+        coverImage: true,
+      },
+    });
+
     if (!edition) {
       throw new Error(`Edition with ID ${editionId} not found`);
     }

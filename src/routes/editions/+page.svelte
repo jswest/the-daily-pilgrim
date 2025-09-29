@@ -64,13 +64,13 @@
             {#each editions as edition}
                 <div class="edition-card">
                     <div class="edition-header">
-                        <h2>Issue {edition.issue_number}</h2>
-                        <div class="edition-date">{formatDate(edition.published_at)}</div>
+                        <h2>Issue {edition.issueNumber}</h2>
+                        <div class="edition-date">{formatDate(edition.publishedAt)}</div>
                     </div>
 
-                    {#if edition.cover_image_filename}
+                    {#if edition.coverImage}
                         <div class="edition-cover">
-                            <img src="/images/{edition.cover_image_filename}" alt="Issue {edition.issue_number} cover" />
+                            <img src="/api/images/{edition.coverImage.id}/file" alt="Issue {edition.issueNumber} cover" />
                         </div>
                     {/if}
 

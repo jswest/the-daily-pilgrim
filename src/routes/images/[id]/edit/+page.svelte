@@ -1,9 +1,11 @@
 <script>
     import { goto } from '$app/navigation';
+    import Header from '$lib/components/Header.svelte';
+    import PageContainer from '$lib/components/base/PageContainer.svelte';
     import ImageForm from '$lib/components/ImageForm.svelte';
 
     let { data } = $props();
-    
+
     let isSubmitting = $state(false);
     let submitMessage = $state('');
     let submitError = $state('');
@@ -71,21 +73,20 @@
     <title>Edit Image: {data.image ? data.image.filename : 'Loading...'} - The Daily Pilgrim</title>
 </svelte:head>
 
-<div class="hero">
-    <h1>Edit Image</h1>
-    <p>Update image metadata and author attribution</p>
-</div>
+<Header
+    breadcrumbs={[
+        { href: "/", label: "Home" },
+        { href: "/images", label: "Images" },
+        { href: `/images/${data.imageId}`, label: data.image ? data.image.filename : "Image" },
+        { label: "Edit" }
+    ]}
+/>
 
-<div class="main-content">
-    <nav class="breadcrumb">
-        <a href="/">Home</a>
-        <span>→</span>
-        <a href="/images">Images</a>
-        <span>→</span>
-        <a href="/images/{data.imageId}">{data.image ? data.image.filename : 'Image'}</a>
-        <span>→</span>
-        <span>Edit</span>
-    </nav>
+<PageContainer>
+    <div class="edit-header">
+        <h1>Edit Image</h1>
+        <p>Update image metadata and author attribution</p>
+    </div>
 
     {#if submitMessage}
         <div class="alert success">
@@ -142,77 +143,35 @@
             mode="edit"
         />
     {/if}
-</div>
+</PageContainer>
 
 <style>
-    :global(:root) {
-        --color-bg: #ffffff;
-        --color-fg: #000000;
-        --color-off: #0066cc;
-        --color-warn: #cc6600;
-        --font-body: "Cormorant";
-        --font-dek: "Merriweather";
-        --font-hed: "Merriweather";
-        --font-masthead: "Bodoni Moda";
-        --unit: 16px;
-    }
-
-    .hero {
-        background-color: var(--color-fg);
-        color: var(--color-bg);
+    .edit-header {
         text-align: center;
         margin-bottom: calc(var(--unit) * 3);
-        padding: var(--unit);
+        padding: calc(var(--unit) * 2);
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
     }
-    
-    .hero h1 {
-        font-family: var(--font-masthead);
-        font-size: calc(var(--unit) * 2);
-        font-weight: 600;
-        line-height: 1;
-        margin: 0 0 var(--unit) 0;
-        text-transform: uppercase;
-        transform-origin: 50% 50%;
-        transform: scaleY(75%);
-    }
-    
-    .hero p {
+
+    .edit-header h1 {
         font-family: var(--font-hed);
-        font-size: var(--unit);
+        font-size: calc(var(--unit) * 2);
         font-weight: 900;
-        margin: 0;
-    }
-
-    .main-content {
-        margin: 0 auto;
-        max-width: 800px;
-        padding: var(--unit);
-    }
-
-    .breadcrumb {
-        display: flex;
-        align-items: center;
-        gap: calc(var(--unit) * 0.5);
-        font-family: var(--font-body);
+        margin: 0 0 calc(var(--unit) * 0.5) 0;
         color: var(--color-fg);
-        margin-bottom: calc(var(--unit) * 2);
     }
 
-    .breadcrumb a {
-        color: var(--color-off);
-        text-decoration: none;
-    }
-
-    .breadcrumb a:hover {
-        text-decoration: underline;
+    .edit-header p {
+        font-family: var(--font-body);
+        margin: 0;
+        color: #666;
     }
 
     .alert {
         padding: var(--unit);
         margin-bottom: calc(var(--unit) * 2);
         text-align: center;
-        font-family: var(--font-body);
-        font-weight: 600;
     }
 
     .alert.success {
@@ -231,14 +190,15 @@
 
     .image-preview-section h2 {
         font-family: var(--font-hed);
-        font-weight: 900;
+        font-weight: 700;
         font-size: calc(var(--unit) * 1.25);
         margin: 0 0 var(--unit) 0;
+        color: var(--color-fg);
     }
 
     .image-preview {
-        background-color: white;
-        border: 1px solid var(--color-fg);
+        background-color: var(--color-bg);
+        border: 1px solid #dee2e6;
         padding: var(--unit);
         display: flex;
         gap: calc(var(--unit) * 1.5);
@@ -248,7 +208,7 @@
         width: 200px;
         height: 150px;
         object-fit: cover;
-        border: 1px solid var(--color-fg);
+        border: 1px solid #dee2e6;
         flex-shrink: 0;
     }
 
@@ -269,10 +229,12 @@
         font-weight: 600;
         min-width: 100px;
         flex-shrink: 0;
+        color: var(--color-fg);
     }
 
     .info-item .value {
         font-family: var(--font-body);
+        color: var(--color-fg);
     }
 
     @media (max-width: 768px) {

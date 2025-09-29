@@ -25,15 +25,15 @@
         }
     });
 
-    async function loadImages() {
-        if (images.length > 0) return; // Already loaded
-        
+    async function loadImages(forceReload = false) {
+        if (images.length > 0 && !forceReload) return; // Already loaded
+
         isLoading = true;
         try {
             const response = await fetch('/api/images');
             const data = await response.json();
             // Filter by image type if specified
-            images = imageType ? data.filter(img => img.image_type === imageType) : data;
+            images = imageType ? data.filter(img => img.imageType === imageType) : data;
         } catch (error) {
             console.error('Error loading images:', error);
         } finally {
@@ -56,11 +56,11 @@
 
     function openSelector() {
         showSelector = true;
-        loadImages();
+        loadImages(true); // Force reload to get latest images
     }
 
     function getImageUrl(image) {
-        if (image.is_processed && image.processing_status === 'completed') {
+        if (image.isProcessed && image.processingStatus === 'completed') {
             return `/api/images/${image.id}/file`;
         }
         return `/api/images/${image.id}/file?original=true`;
@@ -93,7 +93,7 @@
                 <div class="image-info">
                     <div class="image-filename">{selectedImage.filename}</div>
                     <div class="image-meta">
-                        {getImageTypeLabel(selectedImage.image_type)}
+                        {getImageTypeLabel(selectedImage.imageType)}
                         {#if selectedImage.width && selectedImage.height}
                             • {selectedImage.width}×{selectedImage.height}px
                         {/if}
@@ -160,17 +160,6 @@
 </div>
 
 <style>
-    :global(:root) {
-        --color-bg: #ffffff;
-        --color-fg: #000000;
-        --color-off: #0066cc;
-        --color-warn: #cc6600;
-        --font-body: "Cormorant";
-        --font-dek: "Merriweather";
-        --font-hed: "Merriweather";
-        --font-masthead: "Bodoni Moda";
-        --unit: 16px;
-    }
 
     .image-selector {
         margin-bottom: calc(var(--unit) * 1.5);

@@ -29,12 +29,8 @@ export async function load({ url, fetch }) {
             }
         }
 
-        // Get full edition details
-        const detailResponse = await fetch(`/api/editions/${edition.id}`);
-        const fullEdition = await detailResponse.json();
-
         return {
-            edition: fullEdition
+            edition,
         };
     } catch (error) {
         console.error('Error loading edition for print:', error);

@@ -1,6 +1,10 @@
 <script>
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
+    import Header from '$lib/components/Header.svelte';
+    import Button from '$lib/components/base/Button.svelte';
+    import LoadingState from '$lib/components/base/LoadingState.svelte';
+    import PageContainer from '$lib/components/base/PageContainer.svelte';
 
     let edition = null;
     let loading = true;
@@ -39,11 +43,8 @@
         generating = true;
 
         try {
-            // In a real implementation, this would make an API call to trigger PDF generation
             console.log(`Generating PDF for edition ${edition.id}...`);
-
-            // For now, just show a message
-            alert(`PDF generation started for Issue ${edition.issue_number}. Use the CLI command: npm run pdf:generate ${edition.id}`);
+            alert(`PDF generation started for Issue ${edition.issueNumber}. Use the CLI command: npm run pdf:generate ${edition.id}`);
         } catch (err) {
             console.error('Error generating PDF:', err);
             alert('Error generating PDF: ' + err.message);
@@ -54,40 +55,52 @@
 </script>
 
 <svelte:head>
-    <title>{edition ? `Issue ${edition.issue_number}` : 'Edition'} - The Daily Pilgrim</title>
+    <title>{edition ? `Issue ${edition.issueNumber}` : 'Edition'} - The Daily Pilgrim</title>
 </svelte:head>
 
-{#if loading}
-    <div class="loading">Loading edition...</div>
-{:else if error}
-    <div class="error">{error}</div>
-    <div class="actions">
-        <a href="/editions" class="btn btn-secondary">Back to Editions</a>
-    </div>
-{:else if edition}
-    <div class="page-header">
-        <h1>Issue {edition.issue_number}</h1>
-        <p>Published {formatDate(edition.published_at)}</p>
-        <div class="actions">
-            <a href="/editions" class="btn btn-secondary">Back to Editions</a>
-            <a href="/editions/{edition.id}/edit" class="btn btn-secondary">Edit</a>
-            <button on:click={generatePDF} class="btn btn-primary" disabled={generating}>
-                {generating ? 'Generating...' : 'Generate PDF'}
-            </button>
-        </div>
-    </div>
+<Header
+    breadcrumbs={[
+        { href: "/", label: "Home" },
+        { href: "/editions", label: "Editions" },
+        { label: edition ? `Issue ${edition.issueNumber}` : "Loading..." }
+    ]}
+/>
 
-    <div class="edition-content">
-        {#if edition.cover_image}
-            <div class="cover-section">
+{#if loading}
+    <PageContainer>
+        <LoadingState message="Loading edition..." />
+    </PageContainer>
+{:else if error}
+    <PageContainer>
+        <div class="alert">{error}</div>
+        <div class="actions">
+            <Button variant="secondary" href="/editions">Back to Editions</Button>
+        </div>
+    </PageContainer>
+{:else if edition}
+    <PageContainer>
+        <div class="edition-header">
+            <h1>Issue {edition.issueNumber}</h1>
+            <p>Published {formatDate(edition.publishedAt)}</p>
+            <div class="actions">
+                <Button variant="secondary" href="/editions">Back to Editions</Button>
+                <Button variant="secondary" href="/editions/{edition.id}/edit">Edit</Button>
+                <button class="btn btn-primary" on:click={generatePDF} disabled={generating}>
+                    {generating ? 'Generating...' : 'Generate PDF'}
+                </button>
+            </div>
+        </div>
+
+        {#if edition.coverImage}
+            <div class="content-section">
                 <h2>Cover Image</h2>
                 <div class="cover-image">
-                    <img src="/api/images/{edition.cover_image.id}/file" alt="Cover" />
-                    {#if edition.cover_image.caption}
-                        <div class="image-caption">{edition.cover_image.caption}</div>
+                    <img src="/api/images/{edition.coverImage.id}/file" alt="Cover" />
+                    {#if edition.coverImage.caption}
+                        <div class="image-caption">{edition.coverImage.caption}</div>
                     {/if}
-                    {#if edition.cover_image.byline}
-                        <div class="image-credit">Photo by {edition.cover_image.byline}</div>
+                    {#if edition.coverImage.authors}
+                        <div class="image-credit">Photo by {edition.coverImage.authors}</div>
                     {/if}
                 </div>
             </div>
@@ -99,7 +112,7 @@
                 <div class="content-list">
                     {#each edition.articles as article}
                         <div class="content-item">
-                            <h3>{article.hed}</h3>
+                            <h3><a href="/articles/{article.id}">{article.hed}</a></h3>
                             {#if article.dek}
                                 <div class="content-dek">{article.dek}</div>
                             {/if}
@@ -120,7 +133,7 @@
                 <div class="content-list">
                     {#each edition.poems as poem}
                         <div class="content-item">
-                            <h3>{poem.title}</h3>
+                            <h3><a href="/poems/{poem.id}">{poem.title}</a></h3>
                             {#if poem.authors}
                                 <div class="content-authors">by {poem.authors}</div>
                             {/if}
@@ -132,16 +145,16 @@
             {/if}
         </div>
 
-        <div class="content-section">
-            <h2>Images ({edition.images?.length || 0})</h2>
-            {#if edition.images && edition.images.length > 0}
+        {#if edition.images && edition.images.length > 0}
+            <div class="content-section">
+                <h2>Images ({edition.images.length})</h2>
                 <div class="images-grid">
                     {#each edition.images as image}
                         <div class="image-item">
-                            <img src="{image.processed_path || image.original_path}" alt="{image.caption || image.filename}" />
+                            <img src="/api/images/{image.id}/file" alt="{image.caption || image.filename}" />
                             <div class="image-info">
                                 <div class="image-filename">{image.filename}</div>
-                                <div class="image-type">{image.usage_type}</div>
+                                <div class="image-type">{image.usageType}</div>
                                 {#if image.caption}
                                     <div class="image-caption">{image.caption}</div>
                                 {/if}
@@ -152,32 +165,32 @@
                         </div>
                     {/each}
                 </div>
-            {:else}
-                <p class="empty-content">No images in this edition.</p>
-            {/if}
-        </div>
-    </div>
+            </div>
+        {/if}
+    </PageContainer>
 {/if}
 
 <style>
-    .page-header {
-        background-color: var(--color-fg);
-        color: var(--color-bg);
+    .edition-header {
         text-align: center;
         margin-bottom: calc(var(--unit) * 3);
         padding: calc(var(--unit) * 2);
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
     }
 
-    .page-header h1 {
+    .edition-header h1 {
         font-family: var(--font-hed);
-        font-size: calc(var(--unit) * 1.5);
+        font-size: calc(var(--unit) * 2);
         font-weight: 900;
         margin: 0 0 calc(var(--unit) * 0.5) 0;
+        color: var(--color-fg);
     }
 
-    .page-header p {
+    .edition-header p {
         font-family: var(--font-body);
         margin: 0 0 calc(var(--unit) * 1.5) 0;
+        color: #666;
     }
 
     .actions {
@@ -187,34 +200,19 @@
         flex-wrap: wrap;
     }
 
-    .loading, .error {
-        text-align: center;
-        padding: calc(var(--unit) * 3);
-        font-family: var(--font-body);
-    }
-
-    .error {
-        color: var(--color-warn);
-    }
-
-    .edition-content {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: var(--unit);
-    }
-
-    .cover-section, .content-section {
+    .content-section {
         margin-bottom: calc(var(--unit) * 3);
         padding: calc(var(--unit) * 1.5);
-        border: 1px solid #ddd;
+        border: 1px solid #dee2e6;
         background-color: white;
     }
 
-    .cover-section h2, .content-section h2 {
+    .content-section h2 {
         font-family: var(--font-hed);
         font-size: calc(var(--unit) * 1.25);
         font-weight: 700;
         margin: 0 0 calc(var(--unit) * 1.5) 0;
+        color: var(--color-fg);
     }
 
     .cover-image {
@@ -222,9 +220,9 @@
     }
 
     .cover-image img {
-        max-width: 300px;
+        max-width: 400px;
         height: auto;
-        border: 1px solid #ddd;
+        border: 1px solid #dee2e6;
     }
 
     .content-list {
@@ -235,15 +233,24 @@
 
     .content-item {
         padding: calc(var(--unit) * 1);
-        border: 1px solid #eee;
-        background-color: #fafafa;
+        border: 1px solid #e9ecef;
+        background-color: #f8f9fa;
     }
 
     .content-item h3 {
         font-family: var(--font-hed);
-        font-size: var(--unit);
+        font-size: calc(var(--unit) * 1.1);
         font-weight: 700;
         margin: 0 0 calc(var(--unit) * 0.5) 0;
+    }
+
+    .content-item h3 a {
+        color: var(--color-off);
+        text-decoration: none;
+    }
+
+    .content-item h3 a:hover {
+        text-decoration: underline;
     }
 
     .content-dek {
@@ -251,19 +258,22 @@
         font-size: calc(var(--unit) * 0.9);
         color: #666;
         margin-bottom: calc(var(--unit) * 0.5);
+        font-style: italic;
     }
 
     .content-authors {
         font-family: var(--font-body);
         font-size: calc(var(--unit) * 0.85);
         color: var(--color-off);
-        font-style: italic;
+        font-weight: 600;
     }
 
     .empty-content {
         font-family: var(--font-body);
         color: #666;
         font-style: italic;
+        text-align: center;
+        padding: calc(var(--unit) * 2);
     }
 
     .images-grid {
@@ -273,13 +283,14 @@
     }
 
     .image-item {
-        border: 1px solid #eee;
+        border: 1px solid #dee2e6;
         overflow: hidden;
+        background-color: white;
     }
 
     .image-item img {
         width: 100%;
-        height: 150px;
+        height: 200px;
         object-fit: cover;
     }
 
@@ -296,58 +307,21 @@
 
     .image-type {
         font-family: var(--font-body);
-        font-size: calc(var(--unit) * 0.8);
+        font-size: calc(var(--unit) * 0.75);
         color: var(--color-off);
         text-transform: uppercase;
         font-weight: 600;
         margin-bottom: calc(var(--unit) * 0.5);
     }
 
-    .image-caption {
-        font-family: var(--font-body);
-        font-size: calc(var(--unit) * 0.85);
-        font-style: italic;
-        margin-bottom: calc(var(--unit) * 0.25);
-    }
-
-    .image-credit {
+    .image-caption, .image-credit {
         font-family: var(--font-body);
         font-size: calc(var(--unit) * 0.8);
         color: #666;
+        margin-bottom: calc(var(--unit) * 0.25);
     }
 
-    .btn {
-        display: inline-block;
-        padding: calc(var(--unit) * 0.75);
-        text-decoration: none;
-        font-family: var(--font-body);
-        font-size: calc(var(--unit) * 0.9);
-        font-weight: 600;
-        text-align: center;
-        transition: opacity 0.2s ease;
-        border: 1px solid var(--color-fg);
-        cursor: pointer;
-        background: none;
-    }
-
-    .btn:hover:not(:disabled) {
-        opacity: 0.8;
-    }
-
-    .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .btn-primary {
-        background-color: var(--color-off);
-        color: var(--color-bg);
-        border-color: var(--color-off);
-    }
-
-    .btn-secondary {
-        background-color: var(--color-bg);
-        color: var(--color-fg);
-        border-color: var(--color-fg);
+    .image-caption {
+        font-style: italic;
     }
 </style>
