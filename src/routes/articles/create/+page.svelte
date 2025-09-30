@@ -1,158 +1,95 @@
 <script>
-    import { goto } from '$app/navigation';
-    import ArticleForm from '$lib/components/ArticleForm.svelte';
+  import { goto } from "$app/navigation";
+  import ArticleForm from "$lib/components/ArticleForm.svelte";
+  import Header from "$lib/components/Header.svelte";
 
-    let isSubmitting = $state(false);
-    let submitMessage = $state('');
-    let submitError = $state('');
+  let isSubmitting = $state(false);
+  let submitMessage = $state("");
+  let submitError = $state("");
 
-    async function handleSubmit(articleData) {
-        isSubmitting = true;
-        submitError = '';
-        submitMessage = '';
+  async function handleSubmit(articleData) {
+    isSubmitting = true;
+    submitError = "";
+    submitMessage = "";
 
-        try {
-            const response = await fetch('/api/articles', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(articleData)
-            });
+    try {
+      const response = await fetch("/api/articles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(articleData),
+      });
 
-            const result = await response.json();
+      const result = await response.json();
 
-            if (response.ok) {
-                submitMessage = 'Article created successfully!';
-                setTimeout(() => {
-                    goto('/articles');
-                }, 1500);
-            } else {
-                submitError = result.error || 'Failed to create article';
-            }
-        } catch (error) {
-            console.error('Error creating article:', error);
-            submitError = 'Network error. Please try again.';
-        } finally {
-            isSubmitting = false;
-        }
+      if (response.ok) {
+        submitMessage = "Article created successfully!";
+        setTimeout(() => {
+          goto("/articles");
+        }, 1500);
+      } else {
+        submitError = result.error || "Failed to create article";
+      }
+    } catch (error) {
+      console.error("Error creating article:", error);
+      submitError = "Network error. Please try again.";
+    } finally {
+      isSubmitting = false;
     }
+  }
 </script>
 
 <svelte:head>
-    <title>Create Article - The Daily Pilgrim</title>
+  <title>Create Article - The Daily Pilgrim</title>
 </svelte:head>
 
-<div class="hero">
-    <h1>Create New Article</h1>
-    <p>Write headlines, decks, and body content with author attribution</p>
-</div>
+<Header
+  breadcrumbs={[
+    { href: "/", label: "Home" },
+    { href: "/articles", label: "Articles" },
+    { label: "create" },
+  ]}
+/>
 
 <div class="main-content">
-    <nav class="breadcrumb">
-        <a href="/">Home</a>
-        <span>→</span>
-        <a href="/articles">Articles</a>
-        <span>→</span>
-        <span>Create</span>
-    </nav>
+  {#if submitMessage}
+    <div class="alert success">
+      {submitMessage}
+    </div>
+  {/if}
 
-    {#if submitMessage}
-        <div class="alert success">
-            {submitMessage}
-        </div>
-    {/if}
+  {#if submitError}
+    <div class="alert error">
+      {submitError}
+    </div>
+  {/if}
 
-    {#if submitError}
-        <div class="alert error">
-            {submitError}
-        </div>
-    {/if}
-
-    <ArticleForm 
-        onSubmit={handleSubmit} 
-        isSubmitting={isSubmitting}
-    />
+  <ArticleForm onSubmit={handleSubmit} {isSubmitting} />
 </div>
 
 <style>
-    :global(:root) {
-        --color-bg: #ffffff;
-        --color-fg: #000000;
-        --color-off: #0066cc;
-        --color-warn: #cc6600;
-        --font-body: "Cormorant";
-        --font-dek: "Merriweather";
-        --font-hed: "Merriweather";
-        --font-masthead: "Bodoni Moda";
-        --unit: 16px;
-    }
+  .main-content {
+    margin: 0 auto;
+    max-width: 800px;
+    padding: var(--unit);
+  }
 
-    .hero {
-        background-color: var(--color-fg);
-        color: var(--color-bg);
-        text-align: center;
-        margin-bottom: calc(var(--unit) * 3);
-        padding: var(--unit);
-    }
-    
-    .hero h1 {
-        font-family: var(--font-masthead);
-        font-size: calc(var(--unit) * 2);
-        font-weight: 600;
-        line-height: 1;
-        margin: 0 0 var(--unit) 0;
-        text-transform: uppercase;
-        transform-origin: 50% 50%;
-        transform: scaleY(75%);
-    }
-    
-    .hero p {
-        font-family: var(--font-hed);
-        font-size: var(--unit);
-        font-weight: 900;
-        margin: 0;
-    }
+  .alert {
+    padding: var(--unit);
+    margin-bottom: calc(var(--unit) * 2);
+    text-align: center;
+    font-family: var(--font-body);
+    font-weight: 600;
+  }
 
-    .main-content {
-        margin: 0 auto;
-        max-width: 800px;
-        padding: var(--unit);
-    }
+  .alert.success {
+    background-color: var(--color-off);
+    color: var(--color-bg);
+  }
 
-    .breadcrumb {
-        display: flex;
-        align-items: center;
-        gap: calc(var(--unit) * 0.5);
-        font-family: var(--font-body);
-        color: var(--color-fg);
-        margin-bottom: calc(var(--unit) * 2);
-    }
-
-    .breadcrumb a {
-        color: var(--color-off);
-        text-decoration: none;
-    }
-
-    .breadcrumb a:hover {
-        text-decoration: underline;
-    }
-
-    .alert {
-        padding: var(--unit);
-        margin-bottom: calc(var(--unit) * 2);
-        text-align: center;
-        font-family: var(--font-body);
-        font-weight: 600;
-    }
-
-    .alert.success {
-        background-color: var(--color-off);
-        color: var(--color-bg);
-    }
-
-    .alert.error {
-        background-color: var(--color-warn);
-        color: var(--color-bg);
-    }
+  .alert.error {
+    background-color: var(--color-warn);
+    color: var(--color-bg);
+  }
 </style>

@@ -42,15 +42,17 @@
   breadcrumbs={[
     { href: "/", label: "Home" },
     { href: "/articles", label: "Articles" },
-    { label: article ? article.hed : "Loading..." }
+    { label: article ? article.hed : "Loading..." },
   ]}
 />
 
 <div class="page-container">
   {#if article}
     <div class="page-actions">
-      <Button variant="secondary" href="/articles/{article.id}/edit">Edit</Button>
-      <button onclick={deleteArticle} class="btn btn-danger">Delete</button>
+      <Button variant="secondary" href="/articles/{article.id}/edit">
+        Edit
+      </Button>
+      <Button variant="danger" onclick={deleteArticle}>Delete</Button>
     </div>
   {/if}
 
@@ -80,23 +82,6 @@
     gap: var(--unit);
     padding: 0 calc(var(--unit) * 2);
   }
-
-  .btn-danger {
-    background-color: #dc2626;
-    color: var(--color-bg);
-    border: none;
-    padding: calc(var(--unit) * 0.5) var(--unit);
-    font-family: var(--font-hed);
-    font-size: var(--unit);
-    cursor: pointer;
-    opacity: 0.5;
-    transition: opacity 0.2s;
-  }
-
-  .btn-danger:hover {
-    opacity: 1;
-  }
-
   .alert {
     max-width: 800px;
     margin: 0 auto calc(var(--unit) * 2) auto;
@@ -122,65 +107,5 @@
     max-width: 400px;
     margin: 0 auto;
     padding: 0 2rem 3rem 2rem;
-  }
-
-  .article-content {
-    background: white;
-    border: 1px solid var(--color-fg);
-    overflow: hidden;
-    width: 400px;
-  }
-
-  figure {
-    margin: 0;
-    margin-bottom: calc(var(--unit) * 2);
-    padding: 0;
-    width: 400px;
-  }
-  figcaption {
-    font-family: var(--font-body);
-    font-size: var(--unit);
-    font-style: italic;
-    font-weight: 100;
-    padding: 0 var(--unit);
-  }
-  .title-img {
-    display: block;
-    height: calc(400px * 9 / 16);
-    object-fit: cover;
-    width: 400px;
-  }
-
-  h1.article-hed {
-    color: #111827;
-    font-family: var(--font-hed);
-    font-size: calc(var(--unit) * 3);
-    font-weight: 900;
-    line-height: 1;
-    margin: var(--unit) 0 calc(var(--unit) * 1.5) 0;
-    padding: 0 var(--unit);
-    text-align: left;
-    transform-origin: 0 0;
-    transform: scaleX(75%);
-    width: calc((400px - var(--unit) - var(--unit)) / 0.75);
-  }
-  .article-dek {
-    font-size: calc(var(--unit) * 1.5);
-    font-weight: 100;
-    line-height: calc(var(--unit) * 1.5);
-    margin: 0 0 calc(var(--unit) * 1.5) 0;
-    padding: 0 var(--unit);
-    transform-origin: 0 0;
-    transform: scaleX(75%);
-    width: calc((400px - var(--unit) - var(--unit)) / 0.75);
-  }
-  .authors {
-    font-family: var(--font-hed);
-    font-size: var(--unit);
-    font-weight: 900;
-    padding: 0 var(--unit);
-  }
-  .article-body {
-    padding: 0 var(--unit);
   }
 </style>

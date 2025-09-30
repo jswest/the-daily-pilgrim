@@ -28,7 +28,7 @@
     --font-hed: "Merriweather";
     --font-masthead: "Bodoni Moda";
     --font-sans: "Neue Regrade";
-    --unit: 17px;
+    --unit: 16px;
   }
 
   /* Button styles */

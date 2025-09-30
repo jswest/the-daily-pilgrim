@@ -5,7 +5,7 @@
 
   let { article } = $props();
 
-  console.log(article.titleImage);
+  console.log(article);
 </script>
 
 <article class="article-content">

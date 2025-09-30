@@ -13,6 +13,47 @@
   let generating = $state(false);
   let deleting = $state(false);
 
+  // Unified ordered content
+  let orderedContent = $derived.by(() => {
+    if (!edition) return [];
+
+    const allContent = [];
+
+    // Add articles
+    (edition.articles || []).forEach((article) => {
+      allContent.push({
+        type: 'article',
+        orderPosition: article.orderPosition,
+        data: article
+      });
+    });
+
+    // Add poems
+    (edition.poems || []).forEach((poem) => {
+      allContent.push({
+        type: 'poem',
+        orderPosition: poem.orderPosition,
+        data: poem
+      });
+    });
+
+    // Add content images
+    (edition.images || []).forEach((image) => {
+      if (image.usageType === 'content') {
+        allContent.push({
+          type: 'image',
+          orderPosition: image.orderPosition,
+          data: image
+        });
+      }
+    });
+
+    // Sort by orderPosition
+    allContent.sort((a, b) => a.orderPosition - b.orderPosition);
+
+    return allContent;
+  });
+
   onMount(async () => {
     try {
       const id = parseInt($page.params.id);
@@ -38,6 +79,38 @@
       month: "long",
       day: "numeric",
     });
+  }
+
+  function formatAuthors(authors) {
+    if (!authors) return '';
+    if (typeof authors === 'string') return authors;
+    if (Array.isArray(authors)) {
+      return authors.map(a => a.name).join(', ');
+    }
+    return '';
+  }
+
+  function getContentIcon(type) {
+    switch(type) {
+      case 'article': return '📄';
+      case 'poem': return '✒️';
+      case 'image': return '🖼️';
+      default: return '📦';
+    }
+  }
+
+  function getContentTitle(item) {
+    if (item.type === 'article') return item.data.hed;
+    if (item.type === 'poem') return item.data.title;
+    if (item.type === 'image') return item.data.filename;
+    return 'Unknown';
+  }
+
+  function getContentLink(item) {
+    if (item.type === 'article') return `/articles/${item.data.id}`;
+    if (item.type === 'poem') return `/poems/${item.data.id}`;
+    if (item.type === 'image') return `/images/${item.data.id}`;
+    return '#';
   }
 
   async function generatePDF() {
@@ -152,7 +225,7 @@
           {/if}
           {#if edition.coverImage.authors}
             <div class="image-credit">
-              Photo by {edition.coverImage.authors}
+              Photo by {formatAuthors(edition.coverImage.authors)}
             </div>
           {/if}
         </div>
@@ -160,69 +233,49 @@
     {/if}
 
     <div class="content-section">
-      <h2>Articles ({edition.articles?.length || 0})</h2>
-      {#if edition.articles && edition.articles.length > 0}
-        <div class="content-list">
-          {#each edition.articles as article}
-            <div class="content-item">
-              <h3><a href="/articles/{article.id}">{article.hed}</a></h3>
-              {#if article.dek}
-                <div class="content-dek">{article.dek}</div>
-              {/if}
-              {#if article.authors}
-                <div class="content-authors">by {article.authors}</div>
-              {/if}
-            </div>
-          {/each}
-        </div>
-      {:else}
-        <p class="empty-content">No articles in this edition.</p>
-      {/if}
-    </div>
+      <h2>Content ({orderedContent.length} items)</h2>
+      {#if orderedContent.length > 0}
+        <div class="ordered-content-list">
+          {#each orderedContent as item, index}
+            <div class="ordered-content-item">
+              <div class="item-number">{index + 1}</div>
 
-    <div class="content-section">
-      <h2>Poems ({edition.poems?.length || 0})</h2>
-      {#if edition.poems && edition.poems.length > 0}
-        <div class="content-list">
-          {#each edition.poems as poem}
-            <div class="content-item">
-              <h3><a href="/poems/{poem.id}">{poem.title}</a></h3>
-              {#if poem.authors}
-                <div class="content-authors">by {poem.authors}</div>
-              {/if}
-            </div>
-          {/each}
-        </div>
-      {:else}
-        <p class="empty-content">No poems in this edition.</p>
-      {/if}
-    </div>
-
-    {#if edition.images && edition.images.length > 0}
-      <div class="content-section">
-        <h2>Images ({edition.images.length})</h2>
-        <div class="images-grid">
-          {#each edition.images as image}
-            <div class="image-item">
-              <img
-                src="/api/images/{image.id}/file"
-                alt={image.caption || image.filename}
-              />
-              <div class="image-info">
-                <div class="image-filename">{image.filename}</div>
-                <div class="image-type">{image.usageType}</div>
-                {#if image.caption}
-                  <div class="image-caption">{image.caption}</div>
+              <div class="item-preview">
+                {#if item.type === 'image'}
+                  <img
+                    src="/api/images/{item.data.id}/file"
+                    alt={item.data.filename}
+                    class="preview-image"
+                  />
+                {:else}
+                  <div class="preview-icon">{getContentIcon(item.type)}</div>
                 {/if}
-                {#if image.authors}
-                  <div class="image-credit">by {image.authors}</div>
+              </div>
+
+              <div class="item-content">
+                <div class="item-header">
+                  <span class="item-type">{item.type}</span>
+                </div>
+                <h3 class="item-title">
+                  <a href={getContentLink(item)}>{getContentTitle(item)}</a>
+                </h3>
+                {#if item.type === 'article' && item.data.dek}
+                  <div class="item-dek">{item.data.dek}</div>
+                {/if}
+                {#if item.data.authors}
+                  <div class="item-authors">by {formatAuthors(item.data.authors)}</div>
+                {/if}
+                {#if item.type === 'image' && item.data.caption}
+                  <div class="item-caption">{item.data.caption}</div>
                 {/if}
               </div>
             </div>
           {/each}
         </div>
-      </div>
-    {/if}
+      {:else}
+        <p class="empty-content">No content in this edition.</p>
+      {/if}
+    </div>
   </PageContainer>
 {/if}
 
@@ -291,47 +344,16 @@
     border: 1px solid var(--color-fg);
   }
 
-  .content-list {
-    display: flex;
-    flex-direction: column;
-    gap: calc(var(--unit) * 1.5);
-  }
-
-  .content-item {
-    padding: calc(var(--unit) * 1);
-    border: 1px solid var(--color-fg);
-    background-color: #f8f9fa;
-  }
-
-  .content-item h3 {
-    font-family: var(--font-hed);
-    font-size: calc(var(--unit) * 1.1);
-    font-weight: 700;
-    margin: 0 0 calc(var(--unit) * 0.5) 0;
-  }
-
-  .content-item h3 a {
-    color: var(--color-off);
-    text-decoration: none;
-  }
-
-  .content-item h3 a:hover {
-    text-decoration: underline;
-  }
-
-  .content-dek {
+  .image-caption,
+  .image-credit {
     font-family: var(--font-body);
-    font-size: calc(var(--unit) * 0.9);
+    font-size: calc(var(--unit) * 0.8);
     opacity: 0.6;
-    margin-bottom: calc(var(--unit) * 0.5);
-    font-style: italic;
+    margin-top: calc(var(--unit) * 0.5);
   }
 
-  .content-authors {
-    font-family: var(--font-body);
-    font-size: calc(var(--unit) * 0.85);
-    color: var(--color-off);
-    font-weight: 600;
+  .image-caption {
+    font-style: italic;
   }
 
   .empty-content {
@@ -342,53 +364,106 @@
     padding: calc(var(--unit) * 2);
   }
 
-  .images-grid {
-    display: grid;
-    gap: calc(var(--unit) * 1.5);
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  .ordered-content-list {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--unit) * 1);
   }
 
-  .image-item {
+  .ordered-content-item {
+    display: flex;
+    gap: var(--unit);
+    align-items: flex-start;
+    padding: var(--unit);
     border: 1px solid var(--color-fg);
-    overflow: hidden;
+    background-color: #f8f9fa;
+  }
+
+  .item-number {
+    font-family: var(--font-hed);
+    font-weight: 900;
+    font-size: calc(var(--unit) * 1.5);
+    color: var(--color-off);
+    min-width: calc(var(--unit) * 2.5);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .item-preview {
+    width: calc(var(--unit) * 5);
+    height: calc(var(--unit) * 5);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-fg);
     background-color: var(--color-bg);
   }
 
-  .image-item img {
+  .preview-image {
     width: 100%;
-    height: 200px;
+    height: 100%;
     object-fit: cover;
   }
 
-  .image-info {
-    padding: var(--unit);
+  .preview-icon {
+    font-size: calc(var(--unit) * 2.5);
   }
 
-  .image-filename {
-    font-family: var(--font-hed);
-    font-weight: 600;
-    font-size: calc(var(--unit) * 0.9);
+  .item-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .item-header {
     margin-bottom: calc(var(--unit) * 0.25);
   }
 
-  .image-type {
+  .item-type {
     font-family: var(--font-body);
-    font-size: calc(var(--unit) * 0.75);
-    color: var(--color-off);
+    font-size: calc(var(--unit) * 0.7);
     text-transform: uppercase;
-    font-weight: 600;
-    margin-bottom: calc(var(--unit) * 0.5);
+    font-weight: 700;
+    color: var(--color-off);
+    letter-spacing: 0.05em;
   }
 
-  .image-caption,
-  .image-credit {
+  .item-title {
+    font-family: var(--font-hed);
+    font-size: calc(var(--unit) * 1.1);
+    font-weight: 700;
+    margin: 0 0 calc(var(--unit) * 0.5) 0;
+    line-height: 1.2;
+  }
+
+  .item-title a {
+    color: var(--color-fg);
+    text-decoration: none;
+  }
+
+  .item-title a:hover {
+    color: var(--color-off);
+    text-decoration: underline;
+  }
+
+  .item-dek {
     font-family: var(--font-body);
-    font-size: calc(var(--unit) * 0.8);
-    opacity: 0.6;
-    margin-bottom: calc(var(--unit) * 0.25);
+    font-size: calc(var(--unit) * 0.9);
+    opacity: 0.7;
+    margin-bottom: calc(var(--unit) * 0.5);
+    line-height: 1.4;
   }
 
-  .image-caption {
+  .item-authors,
+  .item-caption {
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 0.85);
+    color: var(--color-off);
+    font-weight: 600;
+  }
+
+  .item-caption {
     font-style: italic;
+    opacity: 0.8;
   }
 </style>

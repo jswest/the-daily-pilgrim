@@ -100,23 +100,6 @@
 </div>
 
 <style>
-  /* CSS Reset and variables for print */
-  :global(body) {
-    margin: 0;
-    padding: 0;
-    background: white;
-    color: black;
-    --color-bg: #ffffff;
-    --color-fg: #000000;
-    --color-off: #0066cc;
-    --color-warn: #cc6600;
-    --font-body: "Cormorant";
-    --font-dek: "Merriweather";
-    --font-hed: "Merriweather";
-    --font-masthead: "Bodoni Moda";
-    --unit: 16px;
-  }
-
   /* Page setup for 9:16 aspect ratio (90mm x 160mm) */
   @page {
     size: 400px calc(400px * 16 / 9);

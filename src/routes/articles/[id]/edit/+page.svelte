@@ -78,66 +78,10 @@
 </div>
 
 <style>
-  :global(:root) {
-    --color-bg: #ffffff;
-    --color-fg: #000000;
-    --color-off: #0066cc;
-    --color-warn: #cc6600;
-    --font-body: "Cormorant";
-    --font-dek: "Merriweather";
-    --font-hed: "Merriweather";
-    --font-masthead: "Bodoni Moda";
-    --unit: 16px;
-  }
-
-  .hero {
-    background-color: var(--color-fg);
-    color: var(--color-bg);
-    text-align: center;
-    margin-bottom: calc(var(--unit) * 3);
-    padding: var(--unit);
-  }
-
-  .hero h1 {
-    font-family: var(--font-masthead);
-    font-size: calc(var(--unit) * 2);
-    font-weight: 600;
-    line-height: 1;
-    margin: 0 0 var(--unit) 0;
-    text-transform: uppercase;
-    transform-origin: 50% 50%;
-    transform: scaleY(75%);
-  }
-
-  .hero p {
-    font-family: var(--font-hed);
-    font-size: var(--unit);
-    font-weight: 900;
-    margin: 0;
-  }
-
   .main-content {
     margin: 0 auto;
     max-width: 800px;
     padding: var(--unit);
-  }
-
-  .breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: calc(var(--unit) * 0.5);
-    font-family: var(--font-body);
-    color: var(--color-fg);
-    margin-bottom: calc(var(--unit) * 2);
-  }
-
-  .breadcrumb a {
-    color: var(--color-off);
-    text-decoration: none;
-  }
-
-  .breadcrumb a:hover {
-    text-decoration: underline;
   }
 
   .alert {
