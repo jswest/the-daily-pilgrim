@@ -1,88 +1,63 @@
 <script>
   import Header from "$lib/components/Header.svelte";
+  import PageContainer from "$lib/components/base/PageContainer.svelte";
+  import CardGrid from "$lib/components/base/CardGrid.svelte";
+  import Card from "$lib/components/base/Card.svelte";
+  import Button from "$lib/components/base/Button.svelte";
 </script>
+
+<svelte:head>
+  <title>The Daily Pilgrim</title>
+</svelte:head>
 
 <Header />
 
-<div class="dashboard">
-  <div class="card-grid">
-    <div class="card">
+<PageContainer>
+  <CardGrid>
+    <Card>
       <h2>Articles</h2>
       <div class="card-actions">
-        <a href="/articles/create" class="btn btn-primary">Create Article</a>
-        <a href="/articles" class="btn btn-secondary">View All</a>
+        <Button variant="primary" href="/articles/create">Create Article</Button>
+        <Button variant="secondary" href="/articles">View All</Button>
       </div>
-    </div>
+    </Card>
 
-    <div class="card">
+    <Card>
       <h2>Authors</h2>
       <div class="card-actions">
-        <a href="/authors" class="btn btn-primary">Manage Authors</a>
+        <Button variant="primary" href="/authors">Manage Authors</Button>
       </div>
-    </div>
+    </Card>
 
-    <div class="card">
+    <Card>
       <h2>Poems</h2>
       <div class="card-actions">
-        <a href="/poems/create" class="btn btn-primary">Create Poem</a>
-        <a href="/poems" class="btn btn-secondary">View All</a>
+        <Button variant="primary" href="/poems/create">Create Poem</Button>
+        <Button variant="secondary" href="/poems">View All</Button>
       </div>
-    </div>
+    </Card>
 
-    <div class="card">
+    <Card>
       <h2>Images</h2>
       <div class="card-actions">
-        <a href="/images/upload" class="btn btn-primary">Upload Images</a>
-        <a href="/images" class="btn btn-secondary">View All</a>
+        <Button variant="primary" href="/images/upload">Upload Images</Button>
+        <Button variant="secondary" href="/images">View All</Button>
       </div>
-    </div>
+    </Card>
 
-    <div class="card">
+    <Card>
       <h2>Editions</h2>
       <div class="card-actions">
-        <a href="/editions/create" class="btn btn-primary">Create Edition</a>
-        <a href="/editions" class="btn btn-secondary">View All</a>
+        <Button variant="primary" href="/editions/create">Create Edition</Button>
+        <Button variant="secondary" href="/editions">View All</Button>
       </div>
-    </div>
+    </Card>
 
-    <div class="card">
+    <Card>
       <h2>Processing Queue</h2>
       <div class="card-actions">
-        <a href="/processing" class="btn btn-primary">View Queue</a>
+        <Button variant="primary" href="/processing">View Queue</Button>
       </div>
-    </div>
-  </div>
-</div>
-
-<style>
-  .dashboard {
-    margin: 0 auto;
-    max-width: 1200px;
-    padding: var(--unit);
-  }
-
-  .card-grid {
-    display: grid;
-    gap: 2rem;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
-
-  .card {
-    background-color: white;
-    border: 1px solid var(--color-fg);
-    padding: var(--unit);
-  }
-
-  .card h2 {
-    font-family: var(--font-hed);
-    font-size: calc(var(--unit) * 1);
-    font-weight: 900;
-    line-height: 1;
-    margin: 0 0 var(--unit) 0;
-  }
-  .card-actions {
-    display: flex;
-    gap: var(--unit);
-    flex-wrap: wrap;
-  }
-</style>
+    </Card>
+  </CardGrid>
+</PageContainer>

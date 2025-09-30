@@ -2,14 +2,19 @@
     import Autocomplete from './Autocomplete.svelte';
     import Button from './base/Button.svelte';
 
-    let { onSubmit = () => {}, isSubmitting = false } = $props();
+    let {
+        onSubmit = () => {},
+        isSubmitting = false,
+        initialData = null,
+        mode = 'create' // 'create' or 'edit'
+    } = $props();
 
     let formData = $state({
-        title: '',
-        body: ''
+        title: initialData?.title || '',
+        body: initialData?.body || ''
     });
 
-    let selectedAuthors = $state([]);
+    let selectedAuthors = $state(initialData?.authors || []);
     let errors = $state({});
 
     function validateForm() {
@@ -47,10 +52,10 @@
 
     function resetForm() {
         formData = {
-            title: '',
-            body: ''
+            title: initialData?.title || '',
+            body: initialData?.body || ''
         };
-        selectedAuthors = [];
+        selectedAuthors = initialData?.authors || [];
         errors = {};
     }
 
@@ -122,7 +127,11 @@
             variant="primary"
             disabled={isSubmitting}
         >
-            {isSubmitting ? 'Saving...' : 'Save Poem'}
+            {#if isSubmitting}
+                {mode === 'edit' ? 'Updating...' : 'Creating...'}
+            {:else}
+                {mode === 'edit' ? 'Update Poem' : 'Create Poem'}
+            {/if}
         </Button>
     </div>
 </form>

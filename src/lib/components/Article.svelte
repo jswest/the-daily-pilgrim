@@ -4,8 +4,6 @@
   import { oxford } from "$lib/util.js";
 
   let { article } = $props();
-
-  console.log(article);
 </script>
 
 <article class="article-content">

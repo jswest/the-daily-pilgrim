@@ -25,10 +25,10 @@
 
 <style>
   .page-header {
-    background: white;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 2rem;
-    margin-bottom: 2rem;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-fg);
+    padding: calc(var(--unit) * 2);
+    margin-bottom: calc(var(--unit) * 2);
   }
 
   .header-content {
@@ -36,12 +36,12 @@
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--unit);
   }
 
   .site-title {
     font-family: var(--font-masthead);
-    font-size: 2.5rem;
+    font-size: calc(var(--unit) * 2.5);
     font-weight: 400;
     margin: 0;
     color: var(--color-fg);
@@ -52,13 +52,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: #6b7280;
+    gap: calc(var(--unit) * 0.5);
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 0.875);
+    color: var(--color-fg);
+    opacity: 0.6;
   }
 
   .breadcrumb a {
-    color: #3b82f6;
+    color: var(--color-off);
     text-decoration: none;
   }
 

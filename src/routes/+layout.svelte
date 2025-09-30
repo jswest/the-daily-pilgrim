@@ -1,11 +1,11 @@
 <script>
-	import favicon from '$lib/assets/favicon.svg';
+  import favicon from "$lib/assets/favicon.svg";
 
-	let { children } = $props();
+  let { children } = $props();
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+  <link rel="icon" href={favicon} />
 </svelte:head>
 
 {@render children?.()}
@@ -27,7 +27,7 @@
     --font-dek: "Merriweather";
     --font-hed: "Merriweather";
     --font-masthead: "Bodoni Moda";
-    --font-sans: "Neue Regrade";
+    --font-sans: "Neue Regrade", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
     --unit: 16px;
   }
 
@@ -73,6 +73,26 @@
   :global(.btn-danger) {
     background-color: var(--color-warn);
     color: white;
+  }
+
+  :global(.article-body > p:first-child::first-letter) {
+    float: left;
+    font-family: var(--font-masthead);
+    font-size: calc(var(--unit) * 3);
+    font-weight: 900;
+    line-height: 1;
+    margin-right: calc(var(--unit) * 0.25);
+    margin-top: calc(var(--unit) * 0.5);
+  }
+
+  :global(.article-body hr + p::first-letter) {
+    float: left;
+    font-family: var(--font-masthead);
+    font-size: calc(var(--unit) * 3);
+    font-weight: 900;
+    line-height: 1;
+    margin-right: calc(var(--unit) * 0.25);
+    margin-top: calc(var(--unit) * 0.5);
   }
 
   /* Content typography */

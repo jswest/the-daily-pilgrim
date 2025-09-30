@@ -30,7 +30,15 @@ export async function GET({ params }) {
                     author: true,
                   },
                 },
-                titleImage: true,
+                titleImage: {
+                  with: {
+                    authors: {
+                      with: {
+                        author: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -63,11 +71,14 @@ export async function GET({ params }) {
     const formattedEdition = {
       ...edition,
       articles:
-        edition.articles?.map((ea) => ({
-          ...ea.article,
-          orderPosition: ea.orderPosition,
-          authors: ea.article.authors?.map((aa) => aa.author) || [],
-        })) || [],
+        edition.articles?.map((raw) => {
+          return Object.assign(raw.article, {
+            authors: raw.article.authors.map((au) => au.author),
+            titleImage: Object.assign(raw.article.titleImage, {
+              authors: raw.article.titleImage.authors.map((au) => au.author),
+            }),
+          });
+        }) || [],
       poems:
         edition.poems?.map((ep) => ({
           ...ep.poem,
