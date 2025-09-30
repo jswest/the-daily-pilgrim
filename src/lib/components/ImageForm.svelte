@@ -1,5 +1,6 @@
 <script>
     import Autocomplete from './Autocomplete.svelte';
+    import Button from './base/Button.svelte';
 
     let { 
         onSubmit = () => {}, 
@@ -113,21 +114,21 @@
     </div>
 
     <div class="form-actions">
-        <button
+        <Button
             type="button"
             onclick={resetForm}
-            class="btn btn-secondary"
+            variant="secondary"
             disabled={isSubmitting}
         >
             Reset
-        </button>
-        <button
+        </Button>
+        <Button
             type="submit"
-            class="btn btn-primary"
+            variant="primary"
             disabled={isSubmitting}
         >
             {isSubmitting ? 'Updating...' : 'Update Image'}
-        </button>
+        </Button>
     </div>
 </form>
 

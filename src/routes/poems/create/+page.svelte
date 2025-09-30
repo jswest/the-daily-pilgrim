@@ -1,5 +1,7 @@
 <script>
     import { goto } from '$app/navigation';
+    import Header from "$lib/components/Header.svelte";
+    import PageContainer from "$lib/components/base/PageContainer.svelte";
     import PoemForm from '$lib/components/PoemForm.svelte';
 
     let isSubmitting = $state(false);
@@ -43,18 +45,15 @@
     <title>Create Poem - The Daily Pilgrim</title>
 </svelte:head>
 
-<div class="page-container">
-    <header class="page-header">
-        <h1>Create New Poem</h1>
-        <nav class="breadcrumb">
-            <a href="/">Home</a>
-            <span>→</span>
-            <a href="/poems">Poems</a>
-            <span>→</span>
-            <span>Create</span>
-        </nav>
-    </header>
+<Header
+  breadcrumbs={[
+    { href: "/", label: "Home" },
+    { href: "/poems", label: "Poems" },
+    { label: "Create" }
+  ]}
+/>
 
+<PageContainer>
     {#if submitMessage}
         <div class="alert alert-success">
             {submitMessage}
@@ -67,56 +66,17 @@
         </div>
     {/if}
 
-    <main>
-        <PoemForm 
-            onSubmit={handleSubmit} 
-            isSubmitting={isSubmitting}
-        />
-    </main>
-</div>
+    <PoemForm
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+    />
+</PageContainer>
 
 <style>
-    .page-container {
-        min-height: 100vh;
-        background: #f9fafb;
-    }
-
-    .page-header {
-        background: white;
-        border-bottom: 1px solid #e5e7eb;
-        padding: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .page-header h1 {
-        margin: 0 0 0.5rem 0;
-        font-size: 2rem;
-        font-weight: 700;
-        color: #111827;
-    }
-
-    .breadcrumb {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        color: #6b7280;
-    }
-
-    .breadcrumb a {
-        color: #3b82f6;
-        text-decoration: none;
-    }
-
-    .breadcrumb a:hover {
-        text-decoration: underline;
-    }
-
     .alert {
-        max-width: 800px;
-        margin: 0 auto 2rem auto;
-        padding: 1rem;
-        border-radius: 0.375rem;
+        padding: var(--unit);
+        margin-bottom: calc(var(--unit) * 2);
+        font-family: var(--font-body);
         font-weight: 500;
     }
 
@@ -130,9 +90,5 @@
         background: #fee2e2;
         color: #991b1b;
         border: 1px solid #fca5a5;
-    }
-
-    main {
-        padding: 0 2rem 2rem 2rem;
     }
 </style>

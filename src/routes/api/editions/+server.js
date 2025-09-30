@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 import { getDatabase } from "$lib/db/connection.js";
-import { editions } from "$lib/db/schema.js";
+import { editions, editionArticles, editionPoems, editionImages } from "$lib/db/schema.js";
 
 export async function GET() {
   try {
@@ -75,8 +75,9 @@ export async function GET() {
 export async function POST({ request }) {
   try {
     const db = getDatabase();
-    const { issueNumber, publishedAt, coverImageId } = await request.json();
+    const { issueNumber, publishedAt, coverImageId, orderedContent = [] } = await request.json();
 
+    // Create the edition
     const [edition] = await db
       .insert(editions)
       .values({
@@ -85,6 +86,32 @@ export async function POST({ request }) {
         coverImageId,
       })
       .returning();
+
+    // Process orderedContent in order, maintaining global orderPosition
+    let globalPosition = 1;
+
+    for (const item of orderedContent) {
+      if (item.type === 'article') {
+        await db.insert(editionArticles).values({
+          editionId: edition.id,
+          articleId: item.id,
+          orderPosition: globalPosition++
+        });
+      } else if (item.type === 'poem') {
+        await db.insert(editionPoems).values({
+          editionId: edition.id,
+          poemId: item.id,
+          orderPosition: globalPosition++
+        });
+      } else if (item.type === 'image') {
+        await db.insert(editionImages).values({
+          editionId: edition.id,
+          imageId: item.id,
+          usageType: item.usageType || 'content',
+          orderPosition: globalPosition++
+        });
+      }
+    }
 
     return json(edition);
   } catch (error) {

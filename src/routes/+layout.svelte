@@ -27,6 +27,7 @@
     --font-dek: "Merriweather";
     --font-hed: "Merriweather";
     --font-masthead: "Bodoni Moda";
+    --font-sans: "Neue Regrade";
     --unit: 17px;
   }
 
@@ -37,10 +38,10 @@
     box-sizing: border-box;
     cursor: pointer;
     display: inline-block;
-    font-family: var(--font-hed);
-    font-size: var(--unit);
-    font-weight: 400;
-    line-height: 1;
+    font-family: var(--font-sans);
+    font-size: calc(var(--unit) * 0.75);
+    font-weight: 600;
+    line-height: var(--unit);
     opacity: 0.5;
     padding: calc(var(--unit) * 0.5);
     text-decoration: none;
@@ -60,6 +61,7 @@
   :global(.btn-primary) {
     background-color: var(--color-off);
     color: var(--color-bg);
+    font-weight: 900;
   }
 
   :global(.btn-secondary) {

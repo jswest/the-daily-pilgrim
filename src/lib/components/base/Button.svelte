@@ -11,6 +11,7 @@
   const Tag = href ? 'a' : 'button';
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <svelte:element
   this={Tag}
   class="btn btn-{variant}"
@@ -29,10 +30,10 @@
     box-sizing: border-box;
     cursor: pointer;
     display: inline-block;
-    font-family: var(--font-hed);
-    font-size: var(--unit);
-    font-weight: 400;
-    line-height: 1;
+    font-family: var(--font-sans);
+    font-size: calc(var(--unit) * 0.75);
+    font-weight: 600;
+    line-height: var(--unit);
     opacity: 0.5;
     padding: calc(var(--unit) * 0.5);
     text-decoration: none;
@@ -52,6 +53,7 @@
   .btn-primary {
     background-color: var(--color-off);
     color: var(--color-bg);
+    font-weight: 900;
   }
 
   .btn-secondary {

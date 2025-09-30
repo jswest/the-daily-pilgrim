@@ -7,6 +7,45 @@
   let { data } = $props();
   let edition = $state(data.edition);
 
+  // Merge all content and sort by orderPosition
+  let orderedContent = $derived.by(() => {
+    const allContent = [];
+
+    // Add articles
+    (edition.articles || []).forEach((article) => {
+      allContent.push({
+        type: 'article',
+        orderPosition: article.orderPosition,
+        data: article
+      });
+    });
+
+    // Add poems
+    (edition.poems || []).forEach((poem) => {
+      allContent.push({
+        type: 'poem',
+        orderPosition: poem.orderPosition,
+        data: poem
+      });
+    });
+
+    // Add content images
+    (edition.images || []).forEach((image) => {
+      if (image.usageType === 'content') {
+        allContent.push({
+          type: 'image',
+          orderPosition: image.orderPosition,
+          data: image
+        });
+      }
+    });
+
+    // Sort by orderPosition
+    allContent.sort((a, b) => a.orderPosition - b.orderPosition);
+
+    return allContent;
+  });
+
   function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -40,21 +79,24 @@
     {/if}
   </div>
 
-  {#if edition.articles && edition.articles.length > 0}
-    {#each edition.articles as article}
+  {#each orderedContent as item}
+    {#if item.type === 'article'}
       <div class="article-wrapper">
-        <Article {article} />
+        <Article article={item.data} />
       </div>
-    {/each}
-  {/if}
-
-  {#if edition.poems && edition.poems.length > 0}
-    {#each edition.poems as poem}
+    {:else if item.type === 'poem'}
       <div class="poem-wrapper">
-        <Poem {poem} />
+        <Poem poem={item.data} />
       </div>
-    {/each}
-  {/if}
+    {:else if item.type === 'image'}
+      <div class="image-wrapper">
+        <img src="/api/images/{item.data.id}/file" alt={item.data.caption || ''} />
+        {#if item.data.caption}
+          <p class="image-caption">{item.data.caption}</p>
+        {/if}
+      </div>
+    {/if}
+  {/each}
 </div>
 
 <style>
@@ -138,8 +180,29 @@
   }
 
   .article-wrapper,
-  .poem-wrapper {
+  .poem-wrapper,
+  .image-wrapper {
     break-after: page;
+  }
+
+  .image-wrapper {
+    page-break-inside: avoid;
+    text-align: center;
+    padding: calc(var(--unit) * 2);
+  }
+
+  .image-wrapper img {
+    max-width: 100%;
+    max-height: calc((400px * 16 / 9) - var(--unit) * 4);
+    object-fit: contain;
+  }
+
+  .image-caption {
+    margin-top: calc(var(--unit) * 0.5);
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 0.875);
+    font-style: italic;
+    color: #666;
   }
 
   @media print {

@@ -66,6 +66,12 @@ export class PDFGenerator {
           },
           orderBy: (editionPoems, { asc }) => [asc(editionPoems.orderPosition)],
         },
+        images: {
+          with: {
+            image: true,
+          },
+          orderBy: (editionImages, { asc }) => [asc(editionImages.orderPosition)],
+        },
         coverImage: true,
       },
     });
@@ -193,31 +199,47 @@ export class PDFGenerator {
   }
 
   generateTableOfContents(edition) {
-    let tocItems = [];
+    // Merge all content into a single array, matching the ordering logic
+    const allContent = [];
 
-    // Add articles
-    edition.articles.forEach((article, index) => {
-      tocItems.push({
-        type: "article",
-        title: article.hed,
-        authors: article.authors,
-        page: index + 3, // Cover + TOC + start of content
+    // Add articles with their orderPosition
+    (edition.articles || []).forEach((item) => {
+      allContent.push({
+        type: 'article',
+        orderPosition: item.orderPosition,
+        title: item.article.hed,
+        authors: item.article.authors?.map(aa => aa.author.name).join(', ') || ''
       });
     });
 
-    // Add poems
-    edition.poems.forEach((poem, index) => {
-      tocItems.push({
-        type: "poem",
-        title: poem.title,
-        authors: poem.authors,
-        page: edition.articles.length + index + 3,
+    // Add poems with their orderPosition
+    (edition.poems || []).forEach((item) => {
+      allContent.push({
+        type: 'poem',
+        orderPosition: item.orderPosition,
+        title: item.poem.title,
+        authors: item.poem.authors?.map(pa => pa.author.name).join(', ') || ''
       });
     });
 
-    const tocHTML = tocItems
-      .map(
-        (item) => `
+    // Add content images with their orderPosition
+    (edition.images || []).forEach((item) => {
+      if (item.usageType === 'content') {
+        allContent.push({
+          type: 'image',
+          orderPosition: item.orderPosition,
+          title: item.image.filename,
+          authors: item.image.authors?.map(ia => ia.author.name).join(', ') || ''
+        });
+      }
+    });
+
+    // Sort by global orderPosition
+    allContent.sort((a, b) => a.orderPosition - b.orderPosition);
+
+    // Generate TOC HTML with correct page numbers
+    const tocHTML = allContent
+      .map((item, index) => `
             <div class="toc-item">
                 <div class="toc-title">${item.title}</div>
                 ${
@@ -225,7 +247,7 @@ export class PDFGenerator {
                     ? `<div class="toc-authors">by ${item.authors}</div>`
                     : ""
                 }
-                <div class="toc-page">${item.page}</div>
+                <div class="toc-page">${index + 3}</div>
             </div>
         `
       )
@@ -243,24 +265,52 @@ export class PDFGenerator {
   }
 
   generateContentPages(edition) {
+    // Merge all content into a single array with type tags
+    const allContent = [];
+
+    // Add articles with their orderPosition
+    (edition.articles || []).forEach((item) => {
+      allContent.push({
+        type: 'article',
+        orderPosition: item.orderPosition,
+        data: item.article
+      });
+    });
+
+    // Add poems with their orderPosition
+    (edition.poems || []).forEach((item) => {
+      allContent.push({
+        type: 'poem',
+        orderPosition: item.orderPosition,
+        data: item.poem
+      });
+    });
+
+    // Add images with their orderPosition (only content images)
+    (edition.images || []).forEach((item) => {
+      if (item.usageType === 'content') {
+        allContent.push({
+          type: 'image',
+          orderPosition: item.orderPosition,
+          data: item.image,
+          usageType: item.usageType
+        });
+      }
+    });
+
+    // Sort by global orderPosition
+    allContent.sort((a, b) => a.orderPosition - b.orderPosition);
+
+    // Generate pages in sorted order
     let contentHTML = "";
-
-    // Generate article pages
-    edition.articles.forEach((article) => {
-      contentHTML += this.generateArticlePage(article);
-    });
-
-    // Generate poem pages
-    edition.poems.forEach((poem) => {
-      contentHTML += this.generatePoemPage(poem);
-    });
-
-    // Generate image pages for content images
-    const contentImages = edition.images.filter(
-      (img) => img.usage_type === "content"
-    );
-    contentImages.forEach((image) => {
-      contentHTML += this.generateImagePage(image);
+    allContent.forEach((item) => {
+      if (item.type === 'article') {
+        contentHTML += this.generateArticlePage(item.data);
+      } else if (item.type === 'poem') {
+        contentHTML += this.generatePoemPage(item.data);
+      } else if (item.type === 'image') {
+        contentHTML += this.generateImagePage(item.data);
+      }
     });
 
     return contentHTML;

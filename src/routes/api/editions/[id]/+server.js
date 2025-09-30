@@ -56,16 +56,19 @@ export async function GET({ params }) {
             ...edition,
             articles: edition.articles?.map(ea => ({
                 ...ea.article,
-                authors: ea.article.authors?.map(aa => aa.author.name).join(', ') || ''
+                orderPosition: ea.orderPosition,
+                authors: ea.article.authors?.map(aa => aa.author) || []
             })) || [],
             poems: edition.poems?.map(ep => ({
                 ...ep.poem,
-                authors: ep.poem.authors?.map(pa => pa.author.name).join(', ') || ''
+                orderPosition: ep.orderPosition,
+                authors: ep.poem.authors?.map(pa => pa.author) || []
             })) || [],
             images: edition.images?.map(ei => ({
                 ...ei.image,
+                orderPosition: ei.orderPosition,
                 usageType: ei.usageType,
-                authors: ei.image.authors?.map(ia => ia.author.name).join(', ') || ''
+                authors: ei.image.authors?.map(ia => ia.author) || []
             })) || []
         };
 
@@ -85,7 +88,7 @@ export async function PUT({ params, request }) {
             return json({ error: 'Invalid edition ID' }, { status: 400 });
         }
 
-        const { issueNumber, publishedAt, coverImageId, articleIds = [], poemIds = [], imageIds = [] } = await request.json();
+        const { issueNumber, publishedAt, coverImageId, orderedContent = [] } = await request.json();
 
         // Update the edition
         const [edition] = await db
@@ -103,39 +106,33 @@ export async function PUT({ params, request }) {
             return json({ error: 'Edition not found' }, { status: 404 });
         }
 
-        // Update article relationships
+        // Delete all existing relationships
         await db.delete(editionArticles).where(eq(editionArticles.editionId, id));
-        if (articleIds.length > 0) {
-            for (let i = 0; i < articleIds.length; i++) {
+        await db.delete(editionPoems).where(eq(editionPoems.editionId, id));
+        await db.delete(editionImages).where(eq(editionImages.editionId, id));
+
+        // Process orderedContent in order, maintaining global orderPosition
+        let globalPosition = 1;
+
+        for (const item of orderedContent) {
+            if (item.type === 'article') {
                 await db.insert(editionArticles).values({
                     editionId: id,
-                    articleId: articleIds[i],
-                    orderPosition: i + 1
+                    articleId: item.id,
+                    orderPosition: globalPosition++
                 });
-            }
-        }
-
-        // Update poem relationships
-        await db.delete(editionPoems).where(eq(editionPoems.editionId, id));
-        if (poemIds.length > 0) {
-            for (let i = 0; i < poemIds.length; i++) {
+            } else if (item.type === 'poem') {
                 await db.insert(editionPoems).values({
                     editionId: id,
-                    poemId: poemIds[i],
-                    orderPosition: i + 1
+                    poemId: item.id,
+                    orderPosition: globalPosition++
                 });
-            }
-        }
-
-        // Update image relationships
-        await db.delete(editionImages).where(eq(editionImages.editionId, id));
-        if (imageIds.length > 0) {
-            for (let i = 0; i < imageIds.length; i++) {
+            } else if (item.type === 'image') {
                 await db.insert(editionImages).values({
                     editionId: id,
-                    imageId: imageIds[i].id,
-                    usageType: imageIds[i].usageType,
-                    orderPosition: i + 1
+                    imageId: item.id,
+                    usageType: item.usageType || 'content',
+                    orderPosition: globalPosition++
                 });
             }
         }

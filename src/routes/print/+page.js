@@ -6,28 +6,34 @@ export async function load({ url, fetch }) {
     }
 
     try {
-        let edition;
+        let editionId;
 
         // Check if issue parameter is a number (issue number) or date string
         if (/^\d+$/.test(issueParam)) {
-            // It's an issue number
+            // It's an issue number - find the edition ID
             const response = await fetch(`/api/editions`);
             const editions = await response.json();
-            edition = editions.find(e => (e.issue_number || e.issueNumber) === parseInt(issueParam));
+            const foundEdition = editions.find(e => (e.issue_number || e.issueNumber) === parseInt(issueParam));
 
-            if (!edition) {
+            if (!foundEdition) {
                 throw new Error(`Edition with issue number ${issueParam} not found`);
             }
+            editionId = foundEdition.id;
         } else {
             // It's a date string, find by published date
             const response = await fetch(`/api/editions`);
             const editions = await response.json();
-            edition = editions.find(e => (e.published_at || e.publishedAt).startsWith(issueParam));
+            const foundEdition = editions.find(e => (e.published_at || e.publishedAt).startsWith(issueParam));
 
-            if (!edition) {
+            if (!foundEdition) {
                 throw new Error(`Edition with date ${issueParam} not found`);
             }
+            editionId = foundEdition.id;
         }
+
+        // Fetch the full edition with orderPosition data
+        const editionResponse = await fetch(`/api/editions/${editionId}`);
+        const edition = await editionResponse.json();
 
         return {
             edition,

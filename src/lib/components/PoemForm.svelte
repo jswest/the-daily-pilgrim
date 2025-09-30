@@ -1,5 +1,6 @@
 <script>
     import Autocomplete from './Autocomplete.svelte';
+    import Button from './base/Button.svelte';
 
     let { onSubmit = () => {}, isSubmitting = false } = $props();
 
@@ -13,21 +14,21 @@
 
     function validateForm() {
         errors = {};
-        
+
         if (!formData.title.trim()) {
             errors.title = 'Title is required';
         }
-        
+
         if (!formData.body.trim()) {
             errors.body = 'Body is required';
         }
-        
+
         return Object.keys(errors).length === 0;
     }
 
     async function handleSubmit(event) {
         event.preventDefault();
-        
+
         if (!validateForm()) {
             return;
         }
@@ -108,21 +109,21 @@
     </div>
 
     <div class="form-actions">
-        <button
+        <Button
             type="button"
+            variant="secondary"
             onclick={resetForm}
-            class="btn btn-secondary"
             disabled={isSubmitting}
         >
             Reset
-        </button>
-        <button
+        </Button>
+        <Button
             type="submit"
-            class="btn btn-primary"
+            variant="primary"
             disabled={isSubmitting}
         >
             {isSubmitting ? 'Saving...' : 'Save Poem'}
-        </button>
+        </Button>
     </div>
 </form>
 
@@ -130,102 +131,72 @@
     .poem-form {
         max-width: 800px;
         margin: 0 auto;
-        padding: 2rem;
     }
 
     .form-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: calc(var(--unit) * 1.5);
     }
 
     .form-label {
         display: block;
-        margin-bottom: 0.5rem;
+        margin-bottom: calc(var(--unit) * 0.5);
+        font-family: var(--font-hed);
         font-weight: 600;
-        color: #374151;
+        color: var(--color-fg);
     }
 
     .form-input,
     .form-textarea {
         width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #d1d5db;
-        border-radius: 0.375rem;
-        font-size: 1rem;
+        padding: calc(var(--unit) * 0.75);
+        border: 1px solid var(--color-fg);
+        font-family: var(--font-body);
+        font-size: var(--unit);
         transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
     }
 
     .form-input:focus,
     .form-textarea:focus {
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 1px #3b82f6;
+        border-color: var(--color-off);
+        box-shadow: 0 0 0 1px var(--color-off);
     }
 
     .form-input.error,
     .form-textarea.error {
-        border-color: #dc2626;
+        border-color: var(--color-warn);
     }
 
     .poem-textarea {
         resize: vertical;
         min-height: 300px;
-        font-family: 'Georgia', 'Times New Roman', serif;
-        font-size: 1.125rem;
+        font-family: var(--font-body);
+        font-size: calc(var(--unit) * 1.125);
         line-height: 1.6;
         white-space: pre-wrap;
     }
 
     .form-help {
-        margin-top: 0.5rem;
-        font-size: 0.875rem;
-        color: #6b7280;
+        margin-top: calc(var(--unit) * 0.5);
+        font-family: var(--font-body);
+        font-size: calc(var(--unit) * 0.875);
+        opacity: 0.6;
         font-style: italic;
     }
 
     .error-message {
         display: block;
-        margin-top: 0.25rem;
-        color: #dc2626;
-        font-size: 0.875rem;
+        margin-top: calc(var(--unit) * 0.25);
+        color: var(--color-warn);
+        font-family: var(--font-body);
+        font-size: calc(var(--unit) * 0.875);
     }
 
     .form-actions {
         display: flex;
-        gap: 1rem;
+        gap: var(--unit);
         justify-content: flex-end;
-        margin-top: 2rem;
-    }
-
-    .btn {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 0.375rem;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-
-    .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    .btn-secondary {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-        background: #e5e7eb;
-    }
-
-    .btn-primary {
-        background: #3b82f6;
-        color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-        background: #2563eb;
+        margin-top: calc(var(--unit) * 2);
     }
 </style>

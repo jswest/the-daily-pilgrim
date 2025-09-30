@@ -1,5 +1,6 @@
 <script>
     import Autocomplete from './Autocomplete.svelte';
+    import Button from './base/Button.svelte';
 
     let { onSubmit = () => {}, isSubmitting = false } = $props();
 
@@ -220,21 +221,21 @@
     </div>
 
     <div class="form-actions">
-        <button
+        <Button
             type="button"
             onclick={resetForm}
-            class="btn btn-secondary"
+            variant="secondary"
             disabled={isSubmitting}
         >
             Reset
-        </button>
-        <button
+        </Button>
+        <Button
             type="submit"
-            class="btn btn-primary"
+            variant="primary"
             disabled={isSubmitting || !selectedFile}
         >
             {isSubmitting ? 'Uploading...' : 'Upload Image'}
-        </button>
+        </Button>
     </div>
 </form>
 
@@ -396,38 +397,5 @@
         gap: 1rem;
         justify-content: flex-end;
         margin-top: 2rem;
-    }
-
-    .btn {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 0.375rem;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-
-    .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    .btn-secondary {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-        background: #e5e7eb;
-    }
-
-    .btn-primary {
-        background: #3b82f6;
-        color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-        background: #2563eb;
     }
 </style>
