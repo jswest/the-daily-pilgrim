@@ -41,6 +41,7 @@ export async function GET({ params }) {
                 },
               },
             },
+            note: true,
           },
           orderBy: (editionArticles, { asc }) => [
             asc(editionArticles.orderPosition),
@@ -57,8 +58,24 @@ export async function GET({ params }) {
                 },
               },
             },
+            note: true,
           },
           orderBy: (editionPoems, { asc }) => [asc(editionPoems.orderPosition)],
+        },
+        images: {
+          with: {
+            image: {
+              with: {
+                authors: {
+                  with: {
+                    author: true,
+                  },
+                },
+              },
+            },
+            note: true,
+          },
+          orderBy: (editionImages, { asc }) => [asc(editionImages.orderPosition)],
         },
       },
     });
@@ -77,6 +94,9 @@ export async function GET({ params }) {
             titleImage: Object.assign(raw.article.titleImage, {
               authors: raw.article.titleImage.authors.map((au) => au.author),
             }),
+            orderPosition: raw.orderPosition,
+            noteId: raw.noteId,
+            note: raw.note,
           });
         }) || [],
       poems:
@@ -84,6 +104,8 @@ export async function GET({ params }) {
           ...ep.poem,
           orderPosition: ep.orderPosition,
           authors: ep.poem.authors?.map((pa) => pa.author) || [],
+          noteId: ep.noteId,
+          note: ep.note,
         })) || [],
       images:
         edition.images?.map((ei) => ({
@@ -91,6 +113,8 @@ export async function GET({ params }) {
           orderPosition: ei.orderPosition,
           usageType: ei.usageType,
           authors: ei.image.authors?.map((ia) => ia.author) || [],
+          noteId: ei.noteId,
+          note: ei.note,
         })) || [],
     };
 
@@ -147,12 +171,14 @@ export async function PUT({ params, request }) {
           editionId: id,
           articleId: item.id,
           orderPosition: globalPosition++,
+          noteId: item.noteId || null
         });
       } else if (item.type === "poem") {
         await db.insert(editionPoems).values({
           editionId: id,
           poemId: item.id,
           orderPosition: globalPosition++,
+          noteId: item.noteId || null
         });
       } else if (item.type === "image") {
         await db.insert(editionImages).values({
@@ -160,6 +186,7 @@ export async function PUT({ params, request }) {
           imageId: item.id,
           usageType: item.usageType || "content",
           orderPosition: globalPosition++,
+          noteId: item.noteId || null
         });
       }
     }

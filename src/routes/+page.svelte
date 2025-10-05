@@ -38,6 +38,14 @@
     </Card>
 
     <Card>
+      <h2>Notes</h2>
+      <div class="card-actions">
+        <Button variant="primary" href="/notes/create">Create Note</Button>
+        <Button variant="secondary" href="/notes">View All</Button>
+      </div>
+    </Card>
+
+    <Card>
       <h2>Images</h2>
       <div class="card-actions">
         <Button variant="primary" href="/images/upload">Upload Images</Button>

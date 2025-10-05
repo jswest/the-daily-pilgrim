@@ -3,9 +3,11 @@
 
     let {
         orderedContent = [],
+        availableNotes = [],
         onMoveUp,
         onMoveDown,
-        onRemove
+        onRemove,
+        onNoteChange
     } = $props();
 
     function getContentIcon(type) {
@@ -72,6 +74,19 @@
                         {#if getContentSubtitle(item)}
                             <div class="item-subtitle">by {getContentSubtitle(item)}</div>
                         {/if}
+                        <div class="note-selector">
+                            <label for="note-{index}">Editorial Note:</label>
+                            <select
+                                id="note-{index}"
+                                value={item.noteId || ''}
+                                onchange={(e) => onNoteChange(index, e.target.value ? parseInt(e.target.value) : null)}
+                            >
+                                <option value="">None</option>
+                                {#each availableNotes as note}
+                                    <option value={note.id}>{note.title}</option>
+                                {/each}
+                            </select>
+                        </div>
                     </div>
 
                     <div class="item-controls">
@@ -224,6 +239,36 @@
         font-size: calc(var(--unit) * 0.85);
         color: var(--color-off);
         font-weight: 600;
+    }
+
+    .note-selector {
+        margin-top: calc(var(--unit) * 0.75);
+        display: flex;
+        align-items: center;
+        gap: calc(var(--unit) * 0.5);
+    }
+
+    .note-selector label {
+        font-family: var(--font-body);
+        font-size: calc(var(--unit) * 0.75);
+        font-weight: 600;
+        color: var(--color-fg);
+    }
+
+    .note-selector select {
+        flex: 1;
+        padding: calc(var(--unit) * 0.5);
+        border: 1px solid var(--color-fg);
+        font-family: var(--font-body);
+        font-size: calc(var(--unit) * 0.875);
+        background-color: var(--color-bg);
+        cursor: pointer;
+    }
+
+    .note-selector select:focus {
+        outline: none;
+        border-color: var(--color-off);
+        box-shadow: 0 0 0 1px var(--color-off);
     }
 
     .item-controls {

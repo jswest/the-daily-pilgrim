@@ -84,8 +84,16 @@
     margin-right: calc(var(--unit) * 0.25);
     margin-top: calc(var(--unit) * 0.5);
   }
-
   :global(.article-body hr + p::first-letter) {
+    float: left;
+    font-family: var(--font-masthead);
+    font-size: calc(var(--unit) * 3);
+    font-weight: 900;
+    line-height: 1;
+    margin-right: calc(var(--unit) * 0.25);
+    margin-top: calc(var(--unit) * 0.5);
+  }
+  :global(.article-body h2 + p::first-letter) {
     float: left;
     font-family: var(--font-masthead);
     font-size: calc(var(--unit) * 3);
@@ -102,6 +110,9 @@
     font-weight: 900;
     line-height: 1;
     margin-bottom: calc(var(--unit) * 1.5);
+  }
+  :global(.article-body h2) {
+    text-align: center;
   }
 
   :global(article blockquote) {

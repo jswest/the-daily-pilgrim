@@ -76,6 +76,16 @@ export const editions = sqliteTable('editions', {
   publishedAtIdx: index('idx_editions_published_at').on(table.publishedAt),
 }));
 
+export const notes = sqliteTable('notes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  titleIdx: index('idx_notes_title').on(table.title),
+}));
+
 /* =========================
    Junction (Many-to-Many)
    ========================= */
@@ -107,10 +117,32 @@ export const imageAuthors = sqliteTable('image_authors', {
   roleIdx: index('idx_image_authors_role').on(table.imageId, table.role),
 }));
 
+export const noteArticles = sqliteTable('note_articles', {
+  noteId: integer('note_id').notNull().references(() => notes.id, { onDelete: 'cascade' }),
+  articleId: integer('article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.noteId, table.articleId] }),
+}));
+
+export const notePoems = sqliteTable('note_poems', {
+  noteId: integer('note_id').notNull().references(() => notes.id, { onDelete: 'cascade' }),
+  poemId: integer('poem_id').notNull().references(() => poems.id, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.noteId, table.poemId] }),
+}));
+
+export const noteImages = sqliteTable('note_images', {
+  noteId: integer('note_id').notNull().references(() => notes.id, { onDelete: 'cascade' }),
+  imageId: integer('image_id').notNull().references(() => images.id, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.noteId, table.imageId] }),
+}));
+
 export const editionArticles = sqliteTable('edition_articles', {
   editionId: integer('edition_id').notNull().references(() => editions.id, { onDelete: 'cascade' }),
   articleId: integer('article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
   orderPosition: integer('order_position').notNull(),
+  noteId: integer('note_id').references(() => notes.id, { onDelete: 'set null' }),
 }, (table) => ({
   pk: primaryKey({ columns: [table.editionId, table.articleId] }),
   orderIdx: index('idx_edition_articles_order').on(table.editionId, table.orderPosition),
@@ -120,6 +152,7 @@ export const editionPoems = sqliteTable('edition_poems', {
   editionId: integer('edition_id').notNull().references(() => editions.id, { onDelete: 'cascade' }),
   poemId: integer('poem_id').notNull().references(() => poems.id, { onDelete: 'cascade' }),
   orderPosition: integer('order_position').notNull(),
+  noteId: integer('note_id').references(() => notes.id, { onDelete: 'set null' }),
 }, (table) => ({
   pk: primaryKey({ columns: [table.editionId, table.poemId] }),
   orderIdx: index('idx_edition_poems_order').on(table.editionId, table.orderPosition),
@@ -130,6 +163,7 @@ export const editionImages = sqliteTable('edition_images', {
   imageId: integer('image_id').notNull().references(() => images.id, { onDelete: 'cascade' }),
   usageType: text('usage_type', { enum: ['cover', 'content', 'background'] }).notNull(),
   orderPosition: integer('order_position'),
+  noteId: integer('note_id').references(() => notes.id, { onDelete: 'set null' }),
 }, (table) => ({
   pk: primaryKey({ columns: [table.editionId, table.imageId] }),
   orderIdx: index('idx_edition_images_order').on(table.editionId, table.orderPosition),
@@ -148,11 +182,13 @@ export const articlesRelations = relations(articles, ({ many, one }) => ({
     references: [images.id],
   }),
   editions: many(editionArticles),
+  notes: many(noteArticles),
 }));
 
 export const poemsRelations = relations(poems, ({ many }) => ({
   authors: many(poemAuthors),
   editions: many(editionPoems),
+  notes: many(notePoems),
 }));
 
 export const imagesRelations = relations(images, ({ many }) => ({
@@ -163,6 +199,7 @@ export const imagesRelations = relations(images, ({ many }) => ({
   editions: many(editionImages),
   // Editions that use this as the cover (editions.cover_image_id)
   coverEditions: many(editions),
+  notes: many(noteImages),
 }));
 
 export const editionsRelations = relations(editions, ({ many, one }) => ({
@@ -193,14 +230,38 @@ export const imageAuthorsRelations = relations(imageAuthors, ({ one }) => ({
 export const editionArticlesRelations = relations(editionArticles, ({ one }) => ({
   edition: one(editions, { fields: [editionArticles.editionId], references: [editions.id] }),
   article: one(articles, { fields: [editionArticles.articleId], references: [articles.id] }),
+  note: one(notes, { fields: [editionArticles.noteId], references: [notes.id] }),
 }));
 
 export const editionPoemsRelations = relations(editionPoems, ({ one }) => ({
   edition: one(editions, { fields: [editionPoems.editionId], references: [editions.id] }),
   poem:    one(poems,    { fields: [editionPoems.poemId],   references: [poems.id] }),
+  note: one(notes, { fields: [editionPoems.noteId], references: [notes.id] }),
 }));
 
 export const editionImagesRelations = relations(editionImages, ({ one }) => ({
   edition: one(editions, { fields: [editionImages.editionId], references: [editions.id] }),
   image:   one(images,   { fields: [editionImages.imageId],   references: [images.id] }),
+  note: one(notes, { fields: [editionImages.noteId], references: [notes.id] }),
+}));
+
+export const notesRelations = relations(notes, ({ many }) => ({
+  articles: many(noteArticles),
+  poems: many(notePoems),
+  images: many(noteImages),
+}));
+
+export const noteArticlesRelations = relations(noteArticles, ({ one }) => ({
+  note: one(notes, { fields: [noteArticles.noteId], references: [notes.id] }),
+  article: one(articles, { fields: [noteArticles.articleId], references: [articles.id] }),
+}));
+
+export const notePoemsRelations = relations(notePoems, ({ one }) => ({
+  note: one(notes, { fields: [notePoems.noteId], references: [notes.id] }),
+  poem: one(poems, { fields: [notePoems.poemId], references: [poems.id] }),
+}));
+
+export const noteImagesRelations = relations(noteImages, ({ one }) => ({
+  note: one(notes, { fields: [noteImages.noteId], references: [notes.id] }),
+  image: one(images, { fields: [noteImages.imageId], references: [images.id] }),
 }));

@@ -34,6 +34,7 @@
         poems: [],
         images: []
     });
+    let availableNotes = $state([]);
     let loadingContent = $state(true);
 
     // Ordered content - single unified array
@@ -43,20 +44,31 @@
 
     onMount(async () => {
         try {
-            const response = await fetch('/api/editions/available-content');
-            const data = await response.json();
-            if (response.ok) {
-                availableContent = data;
-                // Initialize ordered content from currentEdition if in edit mode
-                if (currentEdition) {
-                    initializeOrderedContent();
-                }
+            const [contentResponse, notesResponse] = await Promise.all([
+                fetch('/api/editions/available-content'),
+                fetch('/api/notes')
+            ]);
+
+            const contentData = await contentResponse.json();
+            const notesData = await notesResponse.json();
+
+            if (contentResponse.ok) {
+                availableContent = contentData;
             } else {
-                error = data.error || 'Failed to load available content';
+                error = contentData.error || 'Failed to load available content';
+            }
+
+            if (notesResponse.ok) {
+                availableNotes = notesData;
+            }
+
+            // Initialize ordered content from currentEdition if in edit mode
+            if (currentEdition) {
+                initializeOrderedContent();
             }
         } catch (err) {
             error = err.message;
-            console.error('Error loading available content:', err);
+            console.error('Error loading content:', err);
         } finally {
             loadingContent = false;
         }
@@ -65,31 +77,33 @@
     function initializeOrderedContent() {
         const ordered = [];
 
-        // Add articles with their orderPosition
+        // Add articles with their orderPosition and noteId
         if (currentEdition.articles) {
             currentEdition.articles.forEach(article => {
                 ordered.push({
                     type: 'article',
                     id: article.id,
                     data: article,
-                    orderPosition: article.orderPosition
+                    orderPosition: article.orderPosition,
+                    noteId: article.noteId || null
                 });
             });
         }
 
-        // Add poems with their orderPosition
+        // Add poems with their orderPosition and noteId
         if (currentEdition.poems) {
             currentEdition.poems.forEach(poem => {
                 ordered.push({
                     type: 'poem',
                     id: poem.id,
                     data: poem,
-                    orderPosition: poem.orderPosition
+                    orderPosition: poem.orderPosition,
+                    noteId: poem.noteId || null
                 });
             });
         }
 
-        // Add images with their orderPosition
+        // Add images with their orderPosition and noteId
         if (currentEdition.images) {
             currentEdition.images.forEach(image => {
                 ordered.push({
@@ -97,7 +111,8 @@
                     id: image.id,
                     data: image,
                     usageType: image.usageType || 'content',
-                    orderPosition: image.orderPosition
+                    orderPosition: image.orderPosition,
+                    noteId: image.noteId || null
                 });
             });
         }
@@ -119,7 +134,8 @@
         orderedContent = [...orderedContent, {
             type: 'article',
             id: articleId,
-            data: article
+            data: article,
+            noteId: null
         }];
     }
 
@@ -130,7 +146,8 @@
         orderedContent = [...orderedContent, {
             type: 'poem',
             id: poemId,
-            data: poem
+            data: poem,
+            noteId: null
         }];
     }
 
@@ -142,8 +159,15 @@
             type: 'image',
             id: imageId,
             data: image,
-            usageType
+            usageType,
+            noteId: null
         }];
+    }
+
+    function updateNoteId(index, noteId) {
+        orderedContent = orderedContent.map((item, i) =>
+            i === index ? { ...item, noteId } : item
+        );
     }
 
     function removeContent(index) {
@@ -182,7 +206,8 @@
             orderedContent: orderedContent.map(item => ({
                 type: item.type,
                 id: item.id,
-                usageType: item.usageType
+                usageType: item.usageType,
+                noteId: item.noteId
             }))
         };
 
@@ -265,9 +290,11 @@
 
         <OrderedContentList
             orderedContent={orderedContent}
+            availableNotes={availableNotes}
             onMoveUp={moveUp}
             onMoveDown={moveDown}
             onRemove={removeContent}
+            onNoteChange={updateNoteId}
         />
 
         <div class="form-section">

@@ -95,20 +95,23 @@ export async function POST({ request }) {
         await db.insert(editionArticles).values({
           editionId: edition.id,
           articleId: item.id,
-          orderPosition: globalPosition++
+          orderPosition: globalPosition++,
+          noteId: item.noteId || null
         });
       } else if (item.type === 'poem') {
         await db.insert(editionPoems).values({
           editionId: edition.id,
           poemId: item.id,
-          orderPosition: globalPosition++
+          orderPosition: globalPosition++,
+          noteId: item.noteId || null
         });
       } else if (item.type === 'image') {
         await db.insert(editionImages).values({
           editionId: edition.id,
           imageId: item.id,
           usageType: item.usageType || 'content',
-          orderPosition: globalPosition++
+          orderPosition: globalPosition++,
+          noteId: item.noteId || null
         });
       }
     }

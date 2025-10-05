@@ -1,17 +1,20 @@
 <script>
-    let { 
-        selectedItems = $bindable([]), 
-        placeholder = "Search...", 
+    let {
+        selectedItems = $bindable([]),
+        placeholder = "Search...",
         apiEndpoint = "/api/authors",
         displayKey = "name",
         valueKey = "id",
-        multiple = true 
+        multiple = true,
+        allowCreate = true,
+        createEndpoint = apiEndpoint
     } = $props();
 
     let searchQuery = $state("");
     let suggestions = $state([]);
     let showSuggestions = $state(false);
     let inputElement;
+    let isCreating = $state(false);
 
     async function fetchSuggestions(query) {
         if (!query.trim()) {
@@ -47,11 +50,39 @@
         selectedItems = selectedItems.filter((_, i) => i !== index);
     }
 
+    async function createNewItem() {
+        if (!searchQuery.trim() || isCreating) return;
+
+        isCreating = true;
+        try {
+            const response = await fetch(createEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ [displayKey]: searchQuery.trim() })
+            });
+
+            if (response.ok) {
+                const newItem = await response.json();
+                selectItem(newItem);
+            } else {
+                console.error('Failed to create new item');
+            }
+        } catch (error) {
+            console.error('Error creating new item:', error);
+        } finally {
+            isCreating = false;
+        }
+    }
+
     function handleKeydown(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
             if (suggestions.length > 0) {
                 selectItem(suggestions[0]);
+            } else if (allowCreate && searchQuery.trim()) {
+                createNewItem();
             }
         } else if (event.key === 'Escape') {
             showSuggestions = false;
@@ -97,17 +128,32 @@
             class="autocomplete-input"
         />
         
-        {#if showSuggestions && suggestions.length > 0}
-            <ul class="suggestions">
-                {#each suggestions as suggestion}
-                    <li 
-                        class="suggestion-item"
-                        onclick={() => selectItem(suggestion)}
+        {#if showSuggestions}
+            {#if suggestions.length > 0}
+                <ul class="suggestions">
+                    {#each suggestions as suggestion}
+                        <li
+                            class="suggestion-item"
+                            onclick={() => selectItem(suggestion)}
+                        >
+                            {suggestion[displayKey]}
+                        </li>
+                    {/each}
+                </ul>
+            {:else if allowCreate && searchQuery.trim()}
+                <ul class="suggestions">
+                    <li
+                        class="suggestion-item create-new"
+                        onclick={createNewItem}
                     >
-                        {suggestion[displayKey]}
+                        {#if isCreating}
+                            Creating...
+                        {:else}
+                            Create new: <strong>{searchQuery}</strong>
+                        {/if}
                     </li>
-                {/each}
-            </ul>
+                </ul>
+            {/if}
         {/if}
     </div>
 </div>
@@ -199,5 +245,20 @@
 
     .suggestion-item:last-child {
         border-bottom: none;
+    }
+
+    .create-new {
+        background-color: #f0f9ff;
+        color: #0369a1;
+        font-style: italic;
+    }
+
+    .create-new:hover {
+        background-color: #e0f2fe;
+    }
+
+    .create-new strong {
+        font-style: normal;
+        font-weight: 600;
     }
 </style>

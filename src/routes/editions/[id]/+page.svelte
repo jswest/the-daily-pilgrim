@@ -268,6 +268,12 @@
                 {#if item.type === 'image' && item.data.caption}
                   <div class="item-caption">{item.data.caption}</div>
                 {/if}
+                {#if item.data.note}
+                  <div class="item-note">
+                    <span class="note-label">Editorial Note:</span>
+                    <a href="/notes/{item.data.note.id}">{item.data.note.title}</a>
+                  </div>
+                {/if}
               </div>
             </div>
           {/each}
@@ -465,5 +471,30 @@
   .item-caption {
     font-style: italic;
     opacity: 0.8;
+  }
+
+  .item-note {
+    margin-top: calc(var(--unit) * 0.75);
+    padding: calc(var(--unit) * 0.75);
+    background-color: #e8f4ff;
+    border-left: calc(var(--unit) * 0.25) solid var(--color-off);
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 0.85);
+  }
+
+  .note-label {
+    font-weight: 700;
+    color: var(--color-fg);
+    margin-right: calc(var(--unit) * 0.5);
+  }
+
+  .item-note a {
+    color: var(--color-off);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .item-note a:hover {
+    text-decoration: underline;
   }
 </style>

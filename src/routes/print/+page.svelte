@@ -1,5 +1,6 @@
 <script>
   import { oxford } from "$lib/util.js";
+  import { marked } from "marked";
 
   import Article from "$lib/components/Article.svelte";
   import Poem from "$lib/components/Poem.svelte";
@@ -79,7 +80,56 @@
     {/if}
   </div>
 
+  <!-- Table of Contents -->
+  <div class="toc-page">
+    <h2 class="toc-heading">Contents</h2>
+    <div class="toc-list">
+      {#each orderedContent as item}
+        <div class="toc-item">
+          {#if item.type === 'article'}
+            <h3 class="toc-hed">{item.data.hed}</h3>
+            {#if item.data.dek}
+              <p class="toc-dek">{item.data.dek}</p>
+            {/if}
+            {#if item.data.authors && item.data.authors.length > 0}
+              <p class="toc-byline">By {oxford(item.data.authors.map(a => a.name))}</p>
+            {/if}
+          {:else if item.type === 'poem'}
+            <h3 class="toc-hed">{item.data.title}</h3>
+            <p class="toc-type">Poem</p>
+            {#if item.data.authors && item.data.authors.length > 0}
+              <p class="toc-byline">By {oxford(item.data.authors.map(a => a.name))}</p>
+            {/if}
+          {:else if item.type === 'image'}
+            <h3 class="toc-hed">{item.data.caption || item.data.filename}</h3>
+            <p class="toc-type">Image</p>
+            {#if item.data.authors && item.data.authors.length > 0}
+              <p class="toc-byline">By {oxford(item.data.authors.map(a => a.name))}</p>
+            {/if}
+          {/if}
+          {#if item.data.note}
+            <p class="toc-note-title">+ {item.data.note.title}</p>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  </div>
+
   {#each orderedContent as item}
+    <!-- Render note before content if present -->
+    {#if item.data.note}
+      <div class="note-wrapper">
+        <article class="note">
+          <h3 class="note-label">Editor's Note</h3>
+          <h2 class="note-title">{item.data.note.title}</h2>
+          <div class="note-body">
+            {@html marked(item.data.note.body)}
+          </div>
+        </article>
+      </div>
+    {/if}
+
+    <!-- Render content -->
     {#if item.type === 'article'}
       <div class="article-wrapper">
         <Article article={item.data} />
@@ -160,6 +210,137 @@
     height: 100%;
     object-fit: cover;
     width: 100%;
+  }
+
+  .toc-page {
+    page-break-after: always;
+    page-break-inside: avoid;
+    padding: calc(var(--unit) * 2);
+    width: 400px;
+    box-sizing: border-box;
+  }
+
+  .toc-heading {
+    font-family: var(--font-masthead);
+    font-size: calc(var(--unit) * 1.5);
+    font-weight: 900;
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0 0 calc(var(--unit) * 2) 0;
+    letter-spacing: calc(var(--unit) * 0.1);
+  }
+
+  .toc-list {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--unit) * 1.5);
+  }
+
+  .toc-item {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: calc(var(--unit) * 1);
+  }
+
+  .toc-item:last-child {
+    border-bottom: none;
+  }
+
+  .toc-hed {
+    font-family: var(--font-hed);
+    font-size: calc(var(--unit) * 1.125);
+    font-weight: 700;
+    margin: 0 0 calc(var(--unit) * 0.5) 0;
+    line-height: 1.2;
+  }
+
+  .toc-dek {
+    font-family: var(--font-dek);
+    font-size: calc(var(--unit) * 0.875);
+    margin: 0 0 calc(var(--unit) * 0.5) 0;
+    line-height: 1.4;
+    opacity: 0.8;
+  }
+
+  .toc-type {
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 0.75);
+    text-transform: uppercase;
+    letter-spacing: calc(var(--unit) * 0.05);
+    font-weight: 600;
+    margin: 0 0 calc(var(--unit) * 0.5) 0;
+    opacity: 0.6;
+  }
+
+  .toc-byline {
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 0.75);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: calc(var(--unit) * 0.05);
+    margin: 0;
+    opacity: 0.7;
+  }
+
+  .toc-note-title {
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 0.75);
+    font-style: italic;
+    margin: calc(var(--unit) * 0.5) 0 0 0;
+    opacity: 0.7;
+  }
+
+  .note-wrapper {
+    break-after: page;
+  }
+
+  .note {
+    padding: calc(var(--unit));
+    box-sizing: border-box;
+  }
+
+  .note-label {
+    font-family: var(--font-masthead);
+    font-size: calc(var(--unit) * 0.75);
+    letter-spacing: calc(var(--unit) * 0.1);
+    text-align: center;
+    text-transform: uppercase;
+    margin: 0 0 calc(var(--unit) * 1) 0;
+    opacity: 0.7;
+  }
+
+  .note-title {
+    font-family: var(--font-hed);
+    font-size: calc(var(--unit) * 1.5);
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: left;
+    margin: 0 0 calc(var(--unit) * 2) 0;
+  }
+
+  .note-body {
+    font-family: var(--font-body);
+    font-size: var(--unit);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .note-body :global(p) {
+    margin-bottom: calc(var(--unit) * 1.5);
+  }
+
+  .note-body :global(h2) {
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 1.5);
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: calc(var(--unit) * 1.5);
+    text-align: center;
+  }
+
+  .note-body :global(blockquote) {
+    border-left: calc(var(--unit) * 0.25) solid black;
+    margin-left: var(--unit);
+    padding-left: var(--unit);
   }
 
   .article-wrapper,
