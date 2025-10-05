@@ -9,6 +9,9 @@
 <article class="article-content">
   <div class="article-header">
     <h3>Article</h3>
+    {#if article.sourcePublication}
+      <h3 class="source-publication">{article.sourcePublication}</h3>
+    {/if}
     <h1 class="article-hed">{article.hed}</h1>
     {#if article.dek}
       <p class="article-dek">{article.dek}</p>
@@ -75,6 +78,17 @@
     height: calc(400px * 9 / 16);
     object-fit: cover;
     width: 400px;
+  }
+
+  .source-publication {
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 0.875);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: calc(var(--unit) * 0.05);
+    margin: calc(var(--unit) * 0.5) 0;
+    padding: 0 var(--unit);
+    opacity: 0.7;
   }
 
   h1.article-hed {

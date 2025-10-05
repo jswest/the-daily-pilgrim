@@ -94,6 +94,9 @@
             {#if item.data.authors && item.data.authors.length > 0}
               <p class="toc-byline">By {oxford(item.data.authors.map(a => a.name))}</p>
             {/if}
+            {#if item.data.sourcePublication}
+              <p class="toc-source">{item.data.sourcePublication}</p>
+            {/if}
           {:else if item.type === 'poem'}
             <h3 class="toc-hed">{item.data.title}</h3>
             <p class="toc-type">Poem</p>
@@ -279,6 +282,14 @@
     letter-spacing: calc(var(--unit) * 0.05);
     margin: 0;
     opacity: 0.7;
+  }
+
+  .toc-source {
+    font-family: var(--font-body);
+    font-size: calc(var(--unit) * 0.75);
+    font-style: italic;
+    margin: calc(var(--unit) * 0.25) 0 0 0;
+    opacity: 0.6;
   }
 
   .toc-note-title {

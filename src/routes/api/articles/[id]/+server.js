@@ -8,6 +8,7 @@ import {
   imageAuthors,
 } from "$lib/db/schema.js";
 import { eq } from "drizzle-orm";
+import { canonicalizeUrl } from "$lib/util.js";
 
 export async function GET({ params }) {
   try {
@@ -70,10 +71,21 @@ export async function PUT({ params, request }) {
       body,
       authorIds = [],
       title_image_id,
+      url,
+      sourcePublication,
     } = await request.json();
 
     if (!hed || !body) {
       return json({ error: "Hed and body are required" }, { status: 400 });
+    }
+
+    // Canonicalize URL if provided
+    let canonicalUrl = null;
+    let hostname = null;
+    if (url && url.trim()) {
+      const result = canonicalizeUrl(url);
+      canonicalUrl = result.canonical;
+      hostname = result.hostname;
     }
 
     // Update the article first
@@ -84,6 +96,9 @@ export async function PUT({ params, request }) {
         dek,
         body,
         titleImageId: title_image_id,
+        url: canonicalUrl,
+        sourcePublication: sourcePublication || null,
+        hostname,
         updatedAt: new Date().toISOString(),
       })
       .where(eq(articles.id, articleId))
@@ -111,6 +126,12 @@ export async function PUT({ params, request }) {
     return json(article);
   } catch (error) {
     console.error("Error updating article:", error);
+
+    // Check for UNIQUE constraint violation
+    if (error.message && error.message.includes('UNIQUE constraint')) {
+      return json({ error: 'An article with this URL already exists' }, { status: 409 });
+    }
+
     if (error.message === "Article not found") {
       return json({ error: "Article not found" }, { status: 404 });
     }

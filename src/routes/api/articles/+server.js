@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { getDatabase } from '$lib/db/connection.js';
 import { articles, articleAuthors } from '$lib/db/schema.js';
 import { eq } from 'drizzle-orm';
+import { canonicalizeUrl } from '$lib/util.js';
 
 export async function GET() {
     try {
@@ -35,10 +36,19 @@ export async function GET() {
 export async function POST({ request }) {
     try {
         const db = getDatabase();
-        const { hed, dek, body, authorIds = [], title_image_id } = await request.json();
+        const { hed, dek, body, authorIds = [], title_image_id, url, sourcePublication } = await request.json();
 
         if (!hed || !body) {
             return json({ error: 'Hed and body are required' }, { status: 400 });
+        }
+
+        // Canonicalize URL if provided
+        let canonicalUrl = null;
+        let hostname = null;
+        if (url && url.trim()) {
+            const result = canonicalizeUrl(url);
+            canonicalUrl = result.canonical;
+            hostname = result.hostname;
         }
 
         // Create the article first
@@ -49,6 +59,9 @@ export async function POST({ request }) {
                 dek,
                 body,
                 titleImageId: title_image_id,
+                url: canonicalUrl,
+                sourcePublication: sourcePublication || null,
+                hostname,
             })
             .returning();
 
@@ -66,6 +79,12 @@ export async function POST({ request }) {
         return json(article);
     } catch (error) {
         console.error('Error creating article:', error);
+
+        // Check for UNIQUE constraint violation
+        if (error.message && error.message.includes('UNIQUE constraint')) {
+            return json({ error: 'An article with this URL already exists' }, { status: 409 });
+        }
+
         return json({ error: 'Failed to create article' }, { status: 500 });
     }
 }

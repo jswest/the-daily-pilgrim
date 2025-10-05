@@ -15,6 +15,13 @@
       "when": 1759316879187,
       "tag": "0001_nifty_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1759670565444,
+      "tag": "0002_productive_stellaris",
+      "breakpoints": true
     }
   ]
 }

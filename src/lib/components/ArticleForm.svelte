@@ -14,10 +14,14 @@
     hed: initialData?.hed || "",
     dek: initialData?.dek || "",
     body: initialData?.body || "",
+    url: initialData?.url || "",
   });
 
   let selectedAuthors = $state(initialData?.authors || []);
   let selectedImageId = $state(initialData?.title_image_id || null);
+  let selectedSourcePublication = $state(
+    initialData?.sourcePublication ? [{ name: initialData.sourcePublication }] : []
+  );
   let errors = $state({});
 
   function validateForm() {
@@ -45,6 +49,7 @@
       ...formData,
       authorIds: selectedAuthors.map((author) => author.id),
       title_image_id: selectedImageId,
+      sourcePublication: selectedSourcePublication[0]?.name || null,
     };
 
     try {
@@ -59,9 +64,13 @@
       hed: initialData?.hed || "",
       dek: initialData?.dek || "",
       body: initialData?.body || "",
+      url: initialData?.url || "",
     };
     selectedAuthors = initialData?.authors || [];
     selectedImageId = initialData?.title_image_id || null;
+    selectedSourcePublication = initialData?.sourcePublication
+      ? [{ name: initialData.sourcePublication }]
+      : [];
     errors = {};
   }
 
@@ -121,6 +130,31 @@
     onImageSelect={handleImageSelect}
     imageType="title"
   />
+
+  <div class="form-group">
+    <label for="url" class="form-label">URL (optional)</label>
+    <input
+      id="url"
+      type="text"
+      bind:value={formData.url}
+      placeholder="https://example.com/article"
+      class="form-input"
+      disabled={isSubmitting}
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="source-publication" class="form-label">Source Publication (optional)</label>
+    <Autocomplete
+      bind:selectedItems={selectedSourcePublication}
+      placeholder="Search for source publication..."
+      apiEndpoint="/api/source-publications"
+      displayKey="name"
+      valueKey="name"
+      multiple={false}
+      allowCreate={false}
+    />
+  </div>
 
   <div class="form-group">
     <label for="body" class="form-label">Body</label>
